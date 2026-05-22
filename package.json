@@ -1,0 +1,97 @@
+{
+  "name": "novis",
+  "version": "0.1.0-alpha",
+  "description": "Novis — 开源、本地优先的 AI 编程平台，集 Claude Code / Codex CLI / 腾讯 Marvis 三家之长",
+  "main": "dist/electron/main.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:vite\" \"npm run dev:electron\"",
+    "dev:vite": "vite",
+    "dev:electron": "wait-on http://localhost:5173 && electron .",
+    "build": "npm run build:vite && npm run build:electron",
+    "build:vite": "tsc -p tsconfig.json && vite build",
+    "build:electron": "tsc -p tsconfig.node.json",
+    "preview": "vite preview",
+    "lint": "eslint src/ electron/ --ext .ts,.tsx",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.0.2",
+    "electron-store": "^8.2.0",
+    "lucide-react": "^0.383.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^9.0.1",
+    "rehype-highlight": "^7.0.0",
+    "remark-gfm": "^4.0.0",
+    "zustand": "^4.5.2"
+  },
+  "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
+    "@playwright/test": "^1.44.0",
+    "@testing-library/jest-dom": "^6.4.5",
+    "@testing-library/react": "^15.0.7",
+    "@types/node": "^20.12.12",
+    "@types/react": "^18.3.2",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^7.10.0",
+    "@typescript-eslint/parser": "^7.10.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "autoprefixer": "^10.4.19",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "concurrently": "^8.2.2",
+    "electron": "^30.5.1",
+    "electron-builder": "^24.13.3",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-refresh": "^0.4.7",
+    "framer-motion": "^11.2.4",
+    "jsdom": "^24.1.0",
+    "monaco-editor": "^0.48.0",
+    "postcss": "^8.4.38",
+    "prettier": "^3.3.0",
+    "prettier-plugin-tailwindcss": "^0.6.1",
+    "tailwind-merge": "^2.3.0",
+    "tailwindcss": "^3.4.3",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.12",
+    "vitest": "^1.6.0",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.novalab.novis.app",
+    "productName": "Novis",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "resources/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "icon": "resources/icons/icon.icns"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "resources/icons/icon.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "resources/icons"
+    }
+  }
+}
