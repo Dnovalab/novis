@@ -96,10 +96,73 @@ const api = {
     /** 写入文件 */
     writeFile: (filePath: string, content: string) =>
       ipcRenderer.invoke("fs:write-file", filePath, content),
+
+    /** 新建文件或目录 */
+    createItem: (parentPath: string, name: string, type: "file" | "directory") =>
+      ipcRenderer.invoke("fs:create-item", parentPath, name, type),
+
+    /** 删除文件或目录 */
+    deleteItem: (targetPath: string) =>
+      ipcRenderer.invoke("fs:delete-item", targetPath),
+
+    /** 重命名文件或目录 */
+    renameItem: (oldPath: string, newName: string) =>
+      ipcRenderer.invoke("fs:rename-item", oldPath, newName),
   },
 
-  // TODO: 终端操作
-  // TODO: Git 操作
+  // ====== Git API ======
+  git: {
+    status: (repoPath: string) => ipcRenderer.invoke("git:status", repoPath),
+    diff: (repoPath: string, filePath: string, staged: boolean) =>
+      ipcRenderer.invoke("git:diff", repoPath, filePath, staged),
+    commit: (repoPath: string, message: string) =>
+      ipcRenderer.invoke("git:commit", repoPath, message),
+    log: (repoPath: string, maxCount?: number) =>
+      ipcRenderer.invoke("git:log", repoPath, maxCount ?? 30),
+    branches: (repoPath: string) =>
+      ipcRenderer.invoke("git:branches", repoPath),
+    checkout: (repoPath: string, target: string) =>
+      ipcRenderer.invoke("git:checkout", repoPath, target),
+    add: (repoPath: string, filePath: string) =>
+      ipcRenderer.invoke("git:add", repoPath, filePath),
+    unstage: (repoPath: string, filePath: string) =>
+      ipcRenderer.invoke("git:unstage", repoPath, filePath),
+    init: (repoPath: string) => ipcRenderer.invoke("git:init", repoPath),
+    isRepo: (repoPath: string) => ipcRenderer.invoke("git:is-repo", repoPath),
+    addAll: (repoPath: string) => ipcRenderer.invoke("git:add-all", repoPath),
+    unstageAll: (repoPath: string) => ipcRenderer.invoke("git:unstage-all", repoPath),
+    discard: (repoPath: string, filePath: string) =>
+      ipcRenderer.invoke("git:discard", repoPath, filePath),
+    push: (repoPath: string, branch?: string) =>
+      ipcRenderer.invoke("git:push", repoPath, branch),
+    pull: (repoPath: string) => ipcRenderer.invoke("git:pull", repoPath),
+  },
+
+  // ====== 终端 API ======
+  terminal: {
+    spawn: (cwd?: string) => ipcRenderer.invoke("terminal:spawn", cwd),
+    stdin: (sessionId: string, data: string) =>
+      ipcRenderer.invoke("terminal:stdin", sessionId, data),
+    resize: (sessionId: string, cols: number, rows: number) =>
+      ipcRenderer.invoke("terminal:resize", sessionId, cols, rows),
+    kill: (sessionId: string) => ipcRenderer.invoke("terminal:kill", sessionId),
+
+    onStdout: (callback: (data: { sessionId: string; data: string }) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, data: { sessionId: string; data: string }) =>
+        callback(data);
+      ipcRenderer.on("terminal:stdout", handler);
+      return () => ipcRenderer.removeListener("terminal:stdout", handler);
+    },
+
+    onExit: (callback: (data: { sessionId: string; code: number | null }) => void) => {
+      const handler = (
+        _event: Electron.IpcRendererEvent,
+        data: { sessionId: string; code: number | null },
+      ) => callback(data);
+      ipcRenderer.on("terminal:exit", handler);
+      return () => ipcRenderer.removeListener("terminal:exit", handler);
+    },
+  },
 };
 
 contextBridge.exposeInMainWorld("electronAPI", api);
