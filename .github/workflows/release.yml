@@ -1,0 +1,126 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 构建 + 打包（macOS）
+        run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 上传 DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: novis-mac
+          path: release/*.dmg
+
+      - name: 上传 ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: novis-mac-zip
+          path: release/*.zip
+
+  build-win:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 构建 + 打包（Windows）
+        run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 上传 NSIS 安装包
+        uses: actions/upload-artifact@v4
+        with:
+          name: novis-win
+          path: release/*.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 构建 + 打包（Linux）
+        run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 上传 AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: novis-linux
+          path: release/*.AppImage
+
+  release:
+    needs: [build-mac, build-win, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 下载所有构建产物
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: 创建 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Novis ${{ github.ref_name }}
+          body: |
+            ## Novis ${{ github.ref_name }}
+
+            ### 下载
+            | 平台 | 安装包 |
+            |------|--------|
+            | macOS | `novis-*.dmg` (DMG 安装包) |
+            | macOS | `novis-*.zip` (便携版) |
+            | Windows | `novis-*-setup.exe` (NSIS 安装包) |
+            | Linux | `novis-*.AppImage` (AppImage) |
+
+            ### 关于 Novis
+            开源、本地优先的 AI 编程平台，集 Claude Code / Codex CLI / 腾讯 Marvis 三家之长。
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
