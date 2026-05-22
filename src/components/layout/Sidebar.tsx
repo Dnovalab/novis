@@ -4,7 +4,15 @@ import {
   Search,
   GitBranch,
   Puzzle,
+  ListTodo,
+  Brain,
+  Terminal,
+  Shield,
   Settings,
+  AlertCircle,
+  TerminalSquare,
+  ListTree,
+  Keyboard,
   type LucideIcon,
 } from "lucide-react";
 
@@ -16,9 +24,17 @@ interface SidebarItem {
 
 const sidebarItems: SidebarItem[] = [
   { id: "files", label: "文件", icon: FileText },
+  { id: "problems", label: "问题", icon: AlertCircle },
+  { id: "output", label: "输出", icon: TerminalSquare },
+  { id: "outline", label: "大纲", icon: ListTree },
   { id: "search", label: "搜索", icon: Search },
+  { id: "pm", label: "项目管理", icon: ListTodo },
+  { id: "terminal", label: "终端", icon: Terminal },
+  { id: "review", label: "代码审查", icon: Shield },
   { id: "git", label: "Git", icon: GitBranch },
   { id: "extensions", label: "扩展", icon: Puzzle },
+  { id: "keymap", label: "快捷键", icon: Keyboard },
+  { id: "memory", label: "记忆", icon: Brain },
 ];
 
 interface SidebarProps {
@@ -42,6 +58,7 @@ export function Sidebar({ activeTab, onTabChange, isCollapsed }: SidebarProps) {
           return (
             <button
               key={item.id}
+              data-sidebar-tab={item.id}
               onClick={() => onTabChange(item.id)}
               className={cn(
                 "flex h-10 w-10 items-center justify-center rounded-md transition-colors",
