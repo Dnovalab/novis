@@ -307,7 +307,7 @@ export class ModelGateway {
     let buffer = "";
 
     try {
-      while (true) {
+      for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
 
@@ -419,7 +419,7 @@ export class ModelGateway {
     const decoder = new TextDecoder();
 
     try {
-      while (true) {
+      for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
 
@@ -546,7 +546,7 @@ export class ModelGateway {
     const decoder = new TextDecoder();
 
     try {
-      while (true) {
+      for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
 
