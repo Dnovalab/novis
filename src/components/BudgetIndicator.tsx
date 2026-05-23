@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSettingsStore } from "@/stores/settings-store";
-import { DollarSign, Settings2 } from "lucide-react";
+import { DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function BudgetIndicator() {
