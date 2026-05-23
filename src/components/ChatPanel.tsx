@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Send, Square, Trash2, Cpu, DollarSign, Columns2 } from "lucide-react";
-import { useChatStore, type Message } from "@/stores/chat-store";
+import { useChatStore } from "@/stores/chat-store";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useMemoryStore } from "@/stores/memory-store";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ export function ChatPanel() {
     useChatStore();
   const { models, activeModelId } = useSettingsStore();
   const [input, setInput] = useState("");
-  const [streamingId, setStreamingId] = useState<string | null>(null);
+  const [, setStreamingId] = useState<string | null>(null);
   const [streamingContent, setStreamingContent] = useState("");
   const [lastUsage, setLastUsage] = useState<{
     [messageId: string]: TokenUsage;
@@ -141,7 +141,7 @@ export function ChatPanel() {
     return () => {
       cleanupRef.current.forEach((fn) => fn());
     };
-  }, [addMessage, setProcessing]);
+  }, [addMessage, setProcessing, activeModelId]);
 
   // 用 ref 保存 streamingContent 供 done 回调使用
   const streamingContentRef = useRef(streamingContent);
@@ -266,7 +266,7 @@ export function ChatPanel() {
       model: activeModelId,
       messages: history,
     });
-  }, [input, isProcessing, activeModelId, messages, addMessage, setProcessing]);
+  }, [input, isProcessing, activeModelId, messages, addMessage, setProcessing, models]);
 
   const handleCancel = useCallback(() => {
     // PK 阶段终止 PK 模型，否则终止主模型
