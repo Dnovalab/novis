@@ -109,6 +109,59 @@ export function getLanguageFromPath(filePath: string): string {
   return langMap[ext] ?? "plaintext";
 }
 
+/** 路径列表 → 文件树结构 */
+export function buildFileTree(paths: string[]): FileNode[] {
+  const root: FileNode[] = [];
+
+  for (const p of paths) {
+    if (!p || p === ".") continue;
+    const parts = p.split("/").filter(Boolean);
+    let currentLevel = root;
+
+    for (let i = 0; i < parts.length; i++) {
+      const isLast = i === parts.length - 1;
+      const name = parts[i];
+      const existing = currentLevel.find((n) => n.name === name);
+
+      if (existing) {
+        if (!isLast && existing.type === "directory") {
+          currentLevel = existing.children || (existing.children = []);
+        }
+      } else {
+        const node: FileNode = {
+          name,
+          path: parts.slice(0, i + 1).join("/"),
+          type: isLast ? "file" : "directory",
+          children: isLast ? undefined : [],
+          expanded: true,
+        };
+        currentLevel.push(node);
+        if (!isLast) {
+          currentLevel = node.children || (node.children = []);
+        }
+      }
+    }
+  }
+
+  return sortFileTree(root);
+}
+
+export function sortFileTree(nodes: FileNode[]): FileNode[] {
+  const dirs = nodes
+    .filter((n) => n.type === "directory")
+    .map((n) => ({
+      ...n,
+      children: n.children ? sortFileTree(n.children) : n.children,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const files = nodes
+    .filter((n) => n.type === "file")
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return [...dirs, ...files];
+}
+
 // 保存触发器（每次递增，外部可通过此触发 Monaco 保存）
 let _saveCounter = 0;
 // 格式化触发器

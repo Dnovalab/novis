@@ -92,9 +92,21 @@ export async function saveChatHistory(history: ChatHistory): Promise<void> {
 
 // ====== 设置 ======
 
+export type RouteStrategy = "local-first" | "quality-first" | "manual";
+
+export interface EditorConfig {
+  fontSize: number;
+  tabSize: number;
+  wordWrap: "on" | "off";
+  minimapEnabled: boolean;
+}
+
 export interface PersistedSettings {
   theme: "light" | "dark" | "system";
+  /** 具体主题 ID（如 "one-dark", "nord"），优先于 theme 字段 */
+  themeId: string;
   permissionMode: "suggest" | "auto" | "full";
+  editor: EditorConfig;
   models: Array<{
     id: string;
     name: string;
@@ -105,16 +117,38 @@ export interface PersistedSettings {
   }>;
   activeModelId: string | null;
   sidebarCollapsed: boolean;
+
+  // Phase 3 — 智能路由 + 省钱体系
+  routeStrategy: RouteStrategy;
+  monthlyBudgetLimit: number;    // 月度预算上限（元），0 表示不限制
+  currentMonthSpending: number;  // 本月已花费（元）
+  budgetMonth: string;           // 当前预算月份 "YYYY-MM"
 }
 
 export async function loadSettings(): Promise<PersistedSettings> {
   return read<PersistedSettings>(STORAGE_KEYS.SETTINGS, {
     theme: "light",
+    themeId: "default-dark",
     permissionMode: "suggest",
     models: [],
     activeModelId: null,
     sidebarCollapsed: false,
+    routeStrategy: "manual",
+    monthlyBudgetLimit: 30,
+    currentMonthSpending: 0,
+    budgetMonth: getCurrentMonth(),
+    editor: { fontSize: 14, tabSize: 2, wordWrap: "on", minimapEnabled: true },
   });
+}
+
+/** 默认编辑器配置 */
+export function defaultEditorConfig(): EditorConfig {
+  return { fontSize: 14, tabSize: 2, wordWrap: "on", minimapEnabled: true };
+}
+
+function getCurrentMonth(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
 export async function saveSettings(

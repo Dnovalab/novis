@@ -223,8 +223,8 @@ export const useGitStore = create<GitState>((set, get) => ({
       }
 
       let modContent = "";
-      if (modifiedResult.success && modifiedResult.data) {
-        modContent = modifiedResult.data.content ?? "";
+      if (modifiedResult.success && (modifiedResult as any).data) {
+        modContent = (modifiedResult as any).data.content ?? "";
       } else if (modifiedResult.success) {
         modContent = (modifiedResult as any).content ?? "";
       }

@@ -36,6 +36,7 @@ export type SymbolKind =
   | "number"
   | "boolean"
   | "array"
+  | "object"
   | "key"
   | "null"
   | "enum-member"

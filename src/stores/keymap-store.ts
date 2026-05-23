@@ -43,9 +43,6 @@ const STORAGE_KEY = "novis_keymap";
 
 function saveToDisk(data: Record<string, KeyBinding>) {
   try {
-    if (window.electronAPI?.fs?.writeFile) {
-      // Electron 模式：暂用 localStorage 兜底
-    }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch {
     // 持久化失败时静默处理
