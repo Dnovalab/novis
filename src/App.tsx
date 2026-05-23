@@ -26,7 +26,7 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { QuickOpen } from "@/components/QuickOpen";
 import { AboutDialog } from "@/components/AboutDialog";
 import { ShortcutReference } from "@/components/ShortcutReference";
-import { type Command, type KeyBinding, matchBinding, formatBinding } from "@/lib/keyboard";
+import { type Command, type KeyBinding, matchBinding } from "@/lib/keyboard";
 import { useKeymapStore } from "@/stores/keymap-store";
 import { KeymapPanel } from "@/components/KeymapPanel";
 import type { ModelInfo } from "@/types/electron";
@@ -47,8 +47,8 @@ export default function App() {
   const [gatewayModels, setGatewayModels] = useState<ModelInfo[]>([]);
   const [initLoading, setInitLoading] = useState(true);
   const [initMessage, setInitMessage] = useState("正在初始化…");
-  const { models, addModel, setActiveModel, activeModelId, loadFromDisk: loadSettings } = useSettingsStore();
-  const { setFiles, files, setWorkspaceRoot, addWorkspaceFolder } = useFileStore();
+  const { models, activeModelId, loadFromDisk: loadSettings } = useSettingsStore();
+  const { setFiles, addWorkspaceFolder } = useFileStore();
 
   // 启动时恢复持久化数据 + 加载可用模型
   useEffect(() => {
@@ -148,7 +148,7 @@ export default function App() {
     const name = window.prompt("输入文件名（如 App.tsx）：");
     if (!name || !name.trim()) return;
 
-    const { workspaceRoot, files, addFileNode, openFile } = useFileStore.getState();
+    const { workspaceRoot, addFileNode, openFile } = useFileStore.getState();
     const trimmed = name.trim();
 
     // Electron 模式：在 workspaceRoot 下创建
@@ -408,7 +408,7 @@ export default function App() {
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [commands, commandPaletteOpen, aboutOpen, shortcutRefOpen, quickOpenOpen]);
+  }, [commands, commandPaletteOpen, aboutOpen, shortcutRefOpen, quickOpenOpen, monacoSafeCommandIds]);
 
   // 根据侧边栏标签显示不同面板
   const renderSidebarPanel = () => {
@@ -552,6 +552,7 @@ export default function App() {
 }
 
 /** 将树形结构拍平为路径列表 */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function flattenTree(
   nodes: Array<{ name: string; path: string; type: string; children?: any[] }>,
   parent: string,
