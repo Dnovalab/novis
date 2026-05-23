@@ -144,7 +144,7 @@ export function MonacoEditor() {
     const init = async () => {
       try {
         // 配置 Monaco Worker 加载路径
-        ;(window as any).MonacoEnvironment = {
+        (window as any).MonacoEnvironment = {
           getWorker(_workerId: string, label: string) {
             const getWorker = async (modulePath: string) => {
               const worker = new Worker(modulePath, { type: "module" });
@@ -593,7 +593,7 @@ export function MonacoEditor() {
             const text = await navigator.clipboard.readText();
             editor.executeEdits("paste", [
               {
-                range: editor.getSelection() ?? editor.getModel()?.getFullModelRange()!,
+                range: editor.getSelection() ?? editor.getModel()?.getFullModelRange(),
                 text,
                 forceMoveMarkers: true,
               },
