@@ -602,7 +602,7 @@ ipcMain.handle("terminal:spawn", async (_event, cwd?: string) => {
   });
 
   // 进程错误
-  proc.on("error", (err) => {
+  proc.on("error", (_err) => {
     terminalProcesses.delete(sessionId);
     mainWindow?.webContents.send("terminal:exit", {
       sessionId,
@@ -621,7 +621,7 @@ ipcMain.handle("terminal:stdin", async (_event, sessionId: string, data: string)
 });
 
 /** 调整终端尺寸 */
-ipcMain.handle("terminal:resize", async (_event, sessionId: string, _cols: number, _rows: number) => {
+ipcMain.handle("terminal:resize", async (_event, _sessionId: string, _cols: number, _rows: number) => {
   // child_process.spawn 不支持动态 resize，此处保留接口兼容
   // 完整 PTY resize 需要 node-pty
 });
