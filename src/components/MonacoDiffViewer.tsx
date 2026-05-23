@@ -73,7 +73,7 @@ export function MonacoDiffViewer({
 
     const init = async () => {
       try {
-        ;(window as any).MonacoEnvironment = {
+        (window as any).MonacoEnvironment = {
           getWorker(_workerId: string, label: string) {
             const getWorker = async (modulePath: string) => {
               return new Worker(modulePath, { type: "module" });
