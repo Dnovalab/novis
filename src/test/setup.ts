@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom";
 import { vi } from "vitest";
 
-// Monaco Editor 在 jsdom 环境下无法加载，需要 mock
-vi.mock("monaco-editor", () => ({}));
+// Mock monaco-editor with manual mock in __mocks__/monaco-editor.ts
+// Prevents vitest from failing to resolve the ESM-only monaco-editor package
+vi.mock("monaco-editor");
