@@ -48,7 +48,7 @@ export default function App() {
   const [initLoading, setInitLoading] = useState(true);
   const [initMessage, setInitMessage] = useState("正在初始化…");
   const { models, activeModelId, loadFromDisk: loadSettings } = useSettingsStore();
-  const { setFiles, addWorkspaceFolder } = useFileStore();
+  const { files, setFiles, addWorkspaceFolder } = useFileStore();
 
   // 启动时恢复持久化数据 + 加载可用模型
   useEffect(() => {
@@ -328,7 +328,7 @@ export default function App() {
   };
 
   /** 在 Monaco 编辑器中不拦截的快捷键 ID 列表（与 Monaco 自身不冲突） */
-  const monacoSafeCommandIds = new Set([
+  const monacoSafeCommandIds = useMemo(() => new Set([
     "toggle-sidebar",
     "open-files",
     "open-problems",
@@ -339,7 +339,7 @@ export default function App() {
     "open-settings",
     "command-palette",
     "format-document",
-  ]);
+  ]), []);
 
   // 全局键盘快捷键监听
   useEffect(() => {
