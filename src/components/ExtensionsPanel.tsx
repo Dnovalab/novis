@@ -4,7 +4,7 @@
  * 展示当前可用的工具和集成，以及开发中的功能预告。
  */
 
-import { Puzzle, GitBranch, Terminal, Cpu, Search, Brain, ListTodo, FlaskConical, ExternalLink } from "lucide-react";
+import { Puzzle, GitBranch, Terminal, Cpu, Search, Brain, ListTodo, FlaskConical } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ExtensionItem {
