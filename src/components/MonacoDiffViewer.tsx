@@ -61,8 +61,8 @@ export function MonacoDiffViewer({
   language,
 }: MonacoDiffViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const diffEditorRef = useRef<monaco.editor.IStandaloneDiffEditor | null>(null);
-  const monacoRef = useRef<typeof import("monaco-editor") | null>(null);
+  const diffEditorRef = useRef<any>(null);
+  const monacoRef = useRef<any>(null);
 
   const lang = language ?? detectLanguage(fileName);
 
@@ -73,8 +73,7 @@ export function MonacoDiffViewer({
 
     const init = async () => {
       try {
-        // @ts-expect-error — MonacoEnvironment 由 monaco-editor 注入
-        window.MonacoEnvironment = {
+        ;(window as any).MonacoEnvironment = {
           getWorker(_workerId: string, label: string) {
             const getWorker = async (modulePath: string) => {
               return new Worker(modulePath, { type: "module" });

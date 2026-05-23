@@ -272,7 +272,7 @@ function FileGroup({
         <div>
           {sorted.map((d) => (
             <button
-              key={d.id ?? `${d.line}:${d.column}:${d.message}`}
+              key={`${d.filePath}:${d.line}:${d.column}:${d.message.slice(0, 40)}`}
               onClick={() => onDiagnosticClick(d.filePath, d.fileName, d.line)}
               className="flex w-full items-start gap-1 px-2 py-0.5 text-left text-[11px] transition-colors hover:bg-muted/30"
               style={{ paddingLeft: "28px" }}

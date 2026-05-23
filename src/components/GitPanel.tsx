@@ -182,6 +182,12 @@ export function GitPanel() {
     }
   };
 
+  // 分组变更
+  const stagedChanges = (status?.changes ?? []).filter((c) => c.staged);
+  const unstagedChanges = (status?.changes ?? []).filter(
+    (c) => !c.staged && c.status !== "untracked",
+  );
+
   /** AI 审查暂存变更 */
   const handleReviewChanges = useCallback(async () => {
     const changesToReview = stagedChanges.length > 0 ? stagedChanges : unstagedChanges;
@@ -245,11 +251,6 @@ export function GitPanel() {
     }
   }, [stagedChanges, unstagedChanges]);
 
-  // 分组变更
-  const stagedChanges = (status?.changes ?? []).filter((c) => c.staged);
-  const unstagedChanges = (status?.changes ?? []).filter(
-    (c) => !c.staged && c.status !== "untracked",
-  );
   const untrackedFiles = (status?.changes ?? []).filter(
     (c) => c.status === "untracked",
   );

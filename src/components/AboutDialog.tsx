@@ -28,10 +28,8 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
 
   const isElectron = typeof window !== "undefined" && !!window.electronAPI;
 
-  //  Electron 环境下获取平台信息
-  const platform = isElectron
-    ? window.electronAPI!.platform
-    : navigator.platform;
+  // 平台信息
+  const platform = navigator.platform;
 
   return (
     <div

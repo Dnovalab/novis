@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Terminal, type ITerminalOptions } from "xterm";
+import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
 import { WebLinksAddon } from "xterm-addon-web-links";
 import "xterm/css/xterm.css";
@@ -14,7 +14,7 @@ import { useFileStore } from "@/stores/file-store";
 import { Loader2, Play, Trash2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const THEME: ITerminalOptions = {
+const THEME: Record<string, any> = {
   theme: {
     background: "#1e1e2e",
     foreground: "#cdd6f4",
