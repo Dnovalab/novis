@@ -14,7 +14,8 @@ import App from "@/App";
 describe("App", () => {
   it("应该渲染标题 Novis", async () => {
     render(<App />);
-    expect(await screen.findByText("Novis")).toBeInTheDocument();
+    const novisElements = await screen.findAllByText("Novis");
+    expect(novisElements.length).toBeGreaterThan(0);
   });
 
   it("应该显示欢迎页（打开项目按钮）", async () => {
