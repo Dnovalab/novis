@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "monaco-editor": path.resolve(__dirname, "./__mocks__/monaco-editor.ts"),
     },
   },
   build: {
