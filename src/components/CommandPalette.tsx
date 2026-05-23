@@ -6,9 +6,9 @@
  */
 
 import { useEffect, useRef, useState, useMemo } from "react";
-import { Search, type LucideIcon } from "lucide-react";
+import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { type Command, type KeyBinding, formatBinding } from "@/lib/keyboard";
+import { type Command, formatBinding } from "@/lib/keyboard";
 
 interface CommandPaletteProps {
   open: boolean;
