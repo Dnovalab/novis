@@ -1,16 +1,16 @@
 /**
- * KeymapPanel — 快捷键自定义面板
+ * KeymapPanel â å¿«æ·é®èªå®ä¹é¢æ¿
  *
- * 展示所有可用命令及其当前快捷键绑定，支持录制自定义快捷键。
+ * å±ç¤ºææå¯ç¨å½ä»¤åå¶å½åå¿«æ·é®ç»å®ï¼æ¯æå½å¶èªå®ä¹å¿«æ·é®ã
  */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Keyboard, RotateCcw, RotateCcwIcon, AlertTriangle } from "lucide-react";
 import { useKeymapStore } from "@/stores/keymap-store";
 import type { KeyBinding, Command } from "@/lib/keyboard";
-import { formatBinding, modLabel } from "@/lib/keyboard";
+import { formatBinding } from "@/lib/keyboard";
 
 interface KeymapPanelProps {
-  /** 从 App.tsx 传入的完整命令列表 */
+  /** ä» App.tsx ä¼ å¥çå®æ´å½ä»¤åè¡¨ */
   commands: Command[];
 }
 
@@ -19,7 +19,7 @@ export function KeymapPanel({ commands }: KeymapPanelProps) {
   const [search, setSearch] = useState("");
   const [changedCount, setChangedCount] = useState(0);
 
-  // 监听快捷键录制
+  // çå¬å¿«æ·é®å½å¶
   const recordingRef = useRef(recording);
   recordingRef.current = recording;
 
@@ -30,11 +30,11 @@ export function KeymapPanel({ commands }: KeymapPanelProps) {
       e.preventDefault();
       e.stopPropagation();
 
-      // 解析按下的键
+      // è§£ææä¸çé®
       const key = e.key;
-      // 排除单独的修饰键
+      // æé¤åç¬çä¿®é¥°é®
       if (key === "Control" || key === "Shift" || key === "Alt" || key === "Meta") return;
-      // 排除 Escape（取消录制）
+      // æé¤ Escapeï¼åæ¶å½å¶ï¼
       if (key === "Escape") {
         stopRecording();
         return;
@@ -45,7 +45,7 @@ export function KeymapPanel({ commands }: KeymapPanelProps) {
       if (e.altKey) modifiers.push("alt");
       if (e.shiftKey) modifiers.push("shift");
 
-      // 至少需要一个修饰键
+      // è³å°éè¦ä¸ä¸ªä¿®é¥°é®
       if (modifiers.length === 0) return;
 
       const binding: KeyBinding = {
@@ -66,14 +66,14 @@ export function KeymapPanel({ commands }: KeymapPanelProps) {
     return () => window.removeEventListener("keydown", handler, true);
   }, [recording, setBinding, stopRecording]);
 
-  // 3 秒后清除变更提示
+  // 3 ç§åæ¸é¤åæ´æç¤º
   useEffect(() => {
     if (changedCount === 0) return;
     const t = setTimeout(() => setChangedCount(0), 3000);
     return () => clearTimeout(t);
   }, [changedCount]);
 
-  // 获取命令的当前绑定（自定义优先）
+  // è·åå½ä»¤çå½åç»å®ï¼èªå®ä¹ä¼åï¼
   const getEffectiveBinding = useCallback(
     (cmd: Command): KeyBinding | undefined => {
       return customBindings[cmd.id] ?? cmd.binding;
@@ -85,10 +85,10 @@ export function KeymapPanel({ commands }: KeymapPanelProps) {
     (cmdId: string): boolean => {
       return cmdId in customBindings;
     },
-    [customBindings],
+      [customBindings],
   );
 
-  // 按分类分组
+  // æåç±»åç»
   const categories = new Map<string, Command[]>();
   for (const cmd of commands) {
     if (search && !cmd.name.includes(search) && !cmd.id.includes(search)) continue;
@@ -99,52 +99,52 @@ export function KeymapPanel({ commands }: KeymapPanelProps) {
 
   return (
     <div className="flex h-full flex-col">
-      {/* 头部 */}
+      {/* å¤´é¨ */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
           <Keyboard className="h-4 w-4 text-muted-foreground" />
-          <h2 className="text-sm font-medium">快捷键</h2>
+          <h2 className="text-sm font-medium">å¿«æ·é®</h2>
         </div>
         <div className="flex items-center gap-2">
           {changedCount > 0 && (
-            <span className="text-[10px] text-green-500">已保存</span>
+            <span className="text-[10px] text-green-500">å·²ä¿å­</span>
           )}
           <button
             onClick={resetAll}
             className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
-            title="重置所有快捷键"
+            title="éç½®ææå¿«æ·é®"
           >
             <RotateCcwIcon className="h-3 w-3" />
-            重置全部
+            éç½®å¨é¨
           </button>
         </div>
       </div>
 
-      {/* 搜索框 */}
+      {/* æç´¢æ¡ */}
       <div className="border-b px-4 py-2">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="搜索命令…"
+          placeholder="æç´¢å½ä»¤â¦"
           className="w-full rounded-md border bg-background px-3 py-1.5 text-xs outline-none focus:border-primary"
         />
       </div>
 
-      {/* 提示 */}
+      {/* æç¤º */}
       <div className="border-b bg-muted/20 px-4 py-2 text-[10px] text-muted-foreground">
-        <p>点击命令右侧的快捷键区域，然后按下新的快捷键组合来修改。</p>
-        <p className="mt-0.5">按 <kbd className="rounded-sm bg-muted px-1 font-mono text-[9px]">Esc</kbd> 取消录制，修改后的快捷键立即生效。</p>
+        <p>ç¹å»å½ä»¤å³ä¾§çå¿«æ·é®åºåï¼ç¶åæä¸æ°çå¿«æ·é®ç»åæ¥ä¿®æ¹ã</p>
+        <p className="mt-0.5">æ <kbd className="rounded-sm bg-muted px-1 font-mono text-[9px]">Esc</kbd> åæ¶å½å¶ï¼ä¿®æ¹åçå¿«æ·é®ç«å³çæã</p>
       </div>
 
-      {/* 命令列表 */}
+      {/* å½ä»¤åè¡¨ */}
       <div className="flex-1 overflow-y-auto">
         {categories.size === 0 && (
           <div className="flex h-full items-center justify-center p-8 text-center">
             <div>
               <AlertTriangle className="mx-auto h-6 w-6 text-muted-foreground/40" />
               <p className="mt-2 text-xs text-muted-foreground">
-                {search ? "未找到匹配的命令" : "暂无可用命令"}
+                {search ? "æªâå°å¹éçå½ä»¤" : "ææ å¯ç¨å½ä»¤"}
               </p>
             </div>
           </div>
@@ -184,7 +184,7 @@ export function KeymapPanel({ commands }: KeymapPanelProps) {
   );
 }
 
-/* ── 单项 ── */
+/* ââ åé¡¹ ââ */
 function KeymapItem({
   command,
   binding,
@@ -215,13 +215,13 @@ function KeymapItem({
         {isRecording ? (
           <span className="inline-flex items-center gap-1 rounded-md border border-primary bg-primary/10 px-2.5 py-1 text-[10px] font-medium text-primary">
             <span className="h-1.5 w-1.5 animate-ping rounded-full bg-primary" />
-            按下快捷键…
+            Æä¸å¿«æ·é®â¦
           </span>
         ) : binding ? (
           <button
             onClick={onRecord}
             className="rounded-md border border-border px-2 py-1 text-[10px] font-mono text-muted-foreground transition-colors hover:border-primary hover:text-primary"
-            title="点击修改快捷键"
+            title="ç¹å»ä¿®æ¹å¿«æ·é®"
           >
             {binding.label}
           </button>
@@ -229,9 +229,9 @@ function KeymapItem({
           <button
             onClick={onRecord}
             className="rounded-md border border-dashed border-muted-foreground/30 px-2 py-1 text-[10px] text-muted-foreground/50 transition-colors hover:border-primary hover:text-primary"
-            title="添加快捷键"
+            title="æ·»å å¿«æ·é®"
           >
-            添加
+            æ·»å 
           </button>
         )}
 
@@ -239,7 +239,7 @@ function KeymapItem({
           <button
             onClick={onReset}
             className="rounded-md p-1 text-muted-foreground/40 hover:text-foreground"
-            title="恢复默认"
+            title="æ¢å¤é»è®¤"
           >
             <RotateCcw className="h-3 w-3" />
           </button>
