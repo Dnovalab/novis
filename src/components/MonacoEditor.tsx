@@ -593,7 +593,9 @@ export function MonacoEditor() {
             const text = await navigator.clipboard.readText();
             editor.executeEdits("paste", [
               {
-                range: editor.getSelection() ?? editor.getModel()?.getFullModelRange(),
+                range: editor.getSelection() ??
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+                  editor.getModel()?.getFullModelRange()!,
                 text,
                 forceMoveMarkers: true,
               },
