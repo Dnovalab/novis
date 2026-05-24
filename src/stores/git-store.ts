@@ -6,7 +6,7 @@
  */
 
 import { create } from "zustand";
-import type { GitStatus, GitChange, GitCommit, GitBranch, GitDiff } from "@/types/electron";
+import type { GitStatus, GitCommit, GitBranch } from "@/types/electron";
 import { useOutputStore } from "./output-store";
 
 interface GitState {
