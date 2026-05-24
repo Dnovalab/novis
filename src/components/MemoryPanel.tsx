@@ -14,11 +14,9 @@ import {
   GitBranch,
   Code,
   StickyNote,
-  Filter,
   Search,
   X,
   Check,
-  AlertTriangle,
   Info,
 } from "lucide-react";
 import {
