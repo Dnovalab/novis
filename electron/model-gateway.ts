@@ -1,15 +1,15 @@
 /**
- * Novis Model Gateway — 多模型代理网关
+ * Novis Model Gateway â å¤æ¨¡åä»£çç½å³
  *
- * 三重架构：
- *   1. Ollama 本地模型（免费，低延迟）
- *   2. 大厂 API（DeepSeek / Qwen / GLM / 混元）
- *   3. 智能路由（简单 → 本地，复杂 → API）
+ * ä¸éæ¶æï¼
+ *   1. Ollama æ¬å°æ¨¡åï¼åè´¹ï¼ä½å»¶è¿ï¼
+ *   2. å¤§å APIï¼DeepSeek / Qwen / GLM / æ··åï¼
+ *   3. æºè½è·¯ç±ï¼ç®å â æ¬å°ï¼å¤æ â APIï¼
  */
 
 import { BrowserWindow } from "electron";
 
-// ====== 类型定义 ======
+// ====== ç±»åå®ä¹ ======
 
 export interface ModelConfig {
   id: string;
@@ -18,9 +18,9 @@ export interface ModelConfig {
   baseUrl: string;
   apiKey?: string;
   model: string;
-  /** 每百万输入 token 价格（元） */
+  /** æ¯ç¾ä¸è¾å¥ token ä»·æ ¼ï¼åï¼ */
   inputPrice?: number;
-  /** 每百万输出 token 价格（元） */
+  /** æ¯ç¾ä¸è¾åº token ä»·æ ¼ï¼åï¼ */
   outputPrice?: number;
 }
 
@@ -52,13 +52,13 @@ export interface ModelInfo {
   isLocal: boolean;
 }
 
-// ====== 预设模型配置 ======
+// ====== é¢è®¾æ¨¡åéç½® ======
 
 export const BUILTIN_MODELS: ModelConfig[] = [
-  // --- Ollama 本地模型 ---
+  // --- Ollama æ¬å°æ¨¡å ---
   {
     id: "ollama-deepseek-r1",
-    name: "DeepSeek R1 (本地)",
+    name: "DeepSeek R1 (æ¬å°)",
     provider: "ollama",
     baseUrl: "http://localhost:11434",
     model: "deepseek-r1:7b",
@@ -67,7 +67,7 @@ export const BUILTIN_MODELS: ModelConfig[] = [
   },
   {
     id: "ollama-qwen2.5",
-    name: "Qwen 2.5 (本地)",
+    name: "Qwen 2.5 (æ¬å°)",
     provider: "ollama",
     baseUrl: "http://localhost:11434",
     model: "qwen2.5:7b",
@@ -76,7 +76,7 @@ export const BUILTIN_MODELS: ModelConfig[] = [
   },
   {
     id: "ollama-glm4",
-    name: "GLM-4 (本地)",
+    name: "GLM-4 (æ¬å°)",
     provider: "ollama",
     baseUrl: "http://localhost:11434",
     model: "glm4:9b",
@@ -91,7 +91,7 @@ export const BUILTIN_MODELS: ModelConfig[] = [
     provider: "deepseek",
     baseUrl: "https://api.deepseek.com",
     model: "deepseek-chat",
-    inputPrice: 2, // ¥2 / 百万 token
+    inputPrice: 2, // Â¥2 / ç¾ä¸ token
     outputPrice: 8,
   },
   {
@@ -104,7 +104,7 @@ export const BUILTIN_MODELS: ModelConfig[] = [
     outputPrice: 16,
   },
 
-  // --- Qwen (阿里通义千问) API ---
+  // --- Qwen (é¿ééä¹åé®) API ---
   {
     id: "qwen-max",
     name: "Qwen Max",
@@ -133,7 +133,7 @@ export const BUILTIN_MODELS: ModelConfig[] = [
     outputPrice: 2,
   },
 
-  // --- GLM (智谱) API ---
+  // --- GLM (æºè°±) API ---
   {
     id: "glm-4-plus",
     name: "GLM-4 Plus",
@@ -154,20 +154,20 @@ export const BUILTIN_MODELS: ModelConfig[] = [
   },
 ];
 
-// ====== 模型网关 ======
+// ====== æ¨¡åç½å³ ======
 
 export class ModelGateway {
   private models: Map<string, ModelConfig> = new Map();
   private abortControllers: Map<string, AbortController> = new Map();
 
   constructor() {
-    // 加载预置模型
+    // å è½½é¢ç½®æ¨¡å
     for (const model of BUILTIN_MODELS) {
       this.models.set(model.id, model);
     }
   }
 
-  /** 获取所有已注册模型 */
+  /** è·åææå·²æ³¨åæ¨¡å */
   getModels(): ModelInfo[] {
     return Array.from(this.models.values()).map((m) => ({
       id: m.id,
@@ -178,22 +178,22 @@ export class ModelGateway {
     }));
   }
 
-  /** 添加自定义模型 */
+  /** æ·»å èªå®ä¹æ¨¡å */
   addModel(config: ModelConfig): void {
     this.models.set(config.id, config);
   }
 
-  /** 删除模型 */
+  /** å é¤æ¨¡å */
   removeModel(id: string): void {
     this.models.delete(id);
   }
 
-  /** 获取模型配置 */
+  /** è·åæ¨¡åéç½® */
   getModel(id: string): ModelConfig | undefined {
     return this.models.get(id);
   }
 
-  /** 计算此次请求费用 */
+  /** è®¡ç®æ­¤æ¬¡è¯·æ±è´¹ç¨ */
   calculateCost(modelId: string, usage: TokenUsage): number {
     const model = this.models.get(modelId);
     if (!model || !model.inputPrice || !model.outputPrice) return 0;
@@ -203,14 +203,14 @@ export class ModelGateway {
     return Math.round((inputCost + outputCost) * 10000) / 10000;
   }
 
-  // ====== 核心请求方法 ======
+  // ====== æ ¸å¿è¯·æ±æ¹æ³ ======
 
   /**
-   * 向模型发送聊天请求
-   * @param modelId 模型 ID
-   * @param request 请求参数
-   * @param window  Electron BrowserWindow（用于流式推送）
-   * @returns 流式模式返回 null（通过 IPC 推送），非流式返回完整响应
+   * åæ¨¡ååéèå¤©è¯·æ±
+   * @param modelId æ¨¡å ID
+   * @param request è¯·æ±åæ°
+   * @param window  Electron BrowserWindowï¼ç¨äºæµå¼æ¨éï¼
+   * @returns æµå¼æ¨¡å¼è¿å nullï¼éè¿ IPC æ¨éï¼ï¼éæµå¼è¿åå®æ´ååº
    */
   async chat(
     modelId: string,
@@ -218,7 +218,7 @@ export class ModelGateway {
     window?: BrowserWindow,
   ): Promise<{ content: string; usage: TokenUsage } | null> {
     const model = this.models.get(modelId);
-    if (!model) throw new Error(`未知模型: ${modelId}`);
+    if (!model) throw new Error(`æªç¥æ¨¡å: ${modelId}`);
 
     const stream = request.stream ?? true;
 
@@ -232,12 +232,12 @@ export class ModelGateway {
       case "glm":
         return this.chatGLM(model, request, stream, window);
       default:
-        // 按 OpenAI 兼容格式尝试
+        // æ OpenAI å¼å®¹æ ¼å¼å°è¯
         return this.chatOpenAICompat(model, request, stream, window);
     }
   }
 
-  /** 取消正在进行的请求 */
+  /** åæ¶æ­£å¨è¿è¡çè¯·æ± */
   abort(modelId: string): void {
     const controller = this.abortControllers.get(modelId);
     if (controller) {
@@ -276,11 +276,11 @@ export class ModelGateway {
 
     if (!response.ok) {
       const text = await response.text();
-      throw new Error(`Ollama 请求失败 (${response.status}): ${text}`);
+      throw new Error(`Ollama è¯·æ±å¤±è´¥ (${response.status}): ${text}`);
     }
 
     if (!stream || !window) {
-      // 非流式模式 — 读完整响应
+      // éæµå¼æ¨¡å¼ â è¯»å®æ´ååº
       const data = (await response.json()) as {
         message: { content: string };
         total_duration?: number;
@@ -296,7 +296,7 @@ export class ModelGateway {
       return { content: data.message.content, usage };
     }
 
-    // 流式模式
+    // æµå¼æ¨¡å¼
     const requestId = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     let fullContent = "";
     let promptTokens = 0;
@@ -307,7 +307,8 @@ export class ModelGateway {
     let buffer = "";
 
     try {
-      for (;;) {
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
@@ -336,7 +337,7 @@ export class ModelGateway {
               completionTokens = data.eval_count ?? 0;
             }
           } catch {
-            // 忽略解析错误
+            // å¿½ç¥è§£æéè¯¯
           }
         }
       }
@@ -349,14 +350,14 @@ export class ModelGateway {
       promptTokens,
       completionTokens,
       totalTokens: promptTokens + completionTokens,
-      cost: 0, // Ollama 免费
+      cost: 0, // Ollama åè´¹
     };
 
     window.webContents.send("model:stream-done", { id: requestId, usage });
     return { content: fullContent, usage };
   }
 
-  // ====== OpenAI 兼容格式（DeepSeek / Qwen / 混元） ======
+  // ====== OpenAI å¼å®¹æ ¼å¼ï¼DeepSeek / Qwen / æ··åï¼ ======
 
   private async chatOpenAICompat(
     model: ModelConfig,
@@ -387,7 +388,7 @@ export class ModelGateway {
 
     if (!response.ok) {
       const text = await response.text();
-      throw new Error(`${model.provider} 请求失败 (${response.status}): ${text}`);
+      throw new Error(`${model.provider} è¯·æ±å¤±è´¥ (${response.status}): ${text}`);
     }
 
     if (!stream || !window) {
@@ -409,7 +410,7 @@ export class ModelGateway {
       };
     }
 
-    // 流式模式
+    // æµå¼æ¨¡å¼
     const requestId = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     let fullContent = "";
     let promptTokens = 0;
@@ -419,7 +420,8 @@ export class ModelGateway {
     const decoder = new TextDecoder();
 
     try {
-      for (;;) {
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
@@ -457,7 +459,7 @@ export class ModelGateway {
               completionTokens = data.usage.completion_tokens;
             }
           } catch {
-            // 忽略解析错误
+            // å¿½ç¥è§£æéè¯¯
           }
         }
       }
@@ -482,7 +484,7 @@ export class ModelGateway {
     return { content: fullContent, usage };
   }
 
-  // ====== GLM（智谱）API — 格式略有不同 ======
+  // ====== GLMï¼æºè°±ï¼API â æ ¼å¼ç¥æä¸å ======
 
   private async chatGLM(
     model: ModelConfig,
@@ -493,7 +495,7 @@ export class ModelGateway {
     const controller = new AbortController();
     this.abortControllers.set(model.id, controller);
 
-    // GLM 使用 /v4/chat/completions（不是 /v1/）
+    // GLM ä½¿ç¨ /v4/chat/completionsï¼ä¸æ¯ /v1/ï¼
     const body = JSON.stringify({
       model: model.model,
       messages: request.messages,
@@ -514,7 +516,7 @@ export class ModelGateway {
 
     if (!response.ok) {
       const text = await response.text();
-      throw new Error(`GLM 请求失败 (${response.status}): ${text}`);
+      throw new Error(`GLM è¯·æ±å¤±è´¥ (${response.status}): ${text}`);
     }
 
     if (!stream || !window) {
@@ -536,7 +538,7 @@ export class ModelGateway {
       };
     }
 
-    // 流式模式 — GLM 也是 SSE 格式
+    // æµå¼æ¨¡å¼ â GLM ä¹æ¯ SSE æ ¼å¼
     const requestId = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     let fullContent = "";
     let promptTokens = 0;
@@ -546,7 +548,8 @@ export class ModelGateway {
     const decoder = new TextDecoder();
 
     try {
-      for (;;) {
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
@@ -584,7 +587,7 @@ export class ModelGateway {
               completionTokens = data.usage.completion_tokens;
             }
           } catch {
-            // 忽略解析错误
+            // å¿½ç¥è§£æéè¯¯
           }
         }
       }
@@ -610,26 +613,26 @@ export class ModelGateway {
   }
 }
 
-// ====== 智能路由策略 ======
+// ====== æºè½è·¯ç±ç­ç¥ ======
 
 export type RouteStrategy = "local-first" | "quality-first" | "manual";
 
 /**
- * 判断任务复杂度 — 简单任务走本地模型，复杂任务走 API
- * 根据消息长度 + 关键词判断
+ * å¤æ­ä»»å¡å¤æåº¦ â ç®åä»»å¡èµ°æ¬å°æ¨¡åï¼å¤æä»»å¡èµ° API
+ * æ ¹æ®æ¶æ¯é¿åº¦ + å³é®è¯å¤æ­
  */
 export function estimateComplexity(messages: ChatMessage[]): "simple" | "complex" {
   const fullText = messages.map((m) => m.content).join("\n");
 
-  // 长度 > 2000 字视为复杂
+  // é¿åº¦ > 2000 å­è§ä¸ºå¤æ
   if (fullText.length > 2000) return "complex";
 
-  // 包含以下关键词视为复杂
+  // åå«ä»¥ä¸å³é®è¯è§ä¸ºå¤æ
   const complexKeywords = [
-    "代码", "code", "重构", "refactor",
-    "调试", "debug", "错误", "error",
-    "架构", "设计模式", "algorithm",
-    "分析", "分析报告", "review",
+    "ä»£ç ", "code", "éæ", "refactor",
+    "è°è¯", "debug", "éè¯¯", "error",
+    "æ¶æ", "è®¾è®¡æ¨¡å¼", "algorithm",
+    "åæ", "åææ¥å", "review",
   ];
   const lower = fullText.toLowerCase();
   for (const kw of complexKeywords) {
@@ -640,12 +643,12 @@ export function estimateComplexity(messages: ChatMessage[]): "simple" | "complex
 }
 
 /**
- * 智能选择模型
- * @param strategy 路由策略
- * @param messages 消息列表
- * @param localModels 可用的本地模型列表
- * @param apiModels 可用的 API 模型列表
- * @returns 选中的模型 ID
+ * æºè½éæ©æ¨¡å
+ * @param strategy è·¯ç±ç­ç¥
+ * @param messages æ¶æ¯åè¡¨
+ * @param localModels å¯ç¨çæ¬å°æ¨¡ååè¡¨
+ * @param apiModels å¯ç¨ç API æ¨¡ååè¡¨
+ * @returns éä¸­çæ¨¡å ID
  */
 export function selectModel(
   strategy: RouteStrategy,
@@ -658,58 +661,58 @@ export function selectModel(
       if (localModels.length > 0) {
         return {
           modelId: localModels[0].id,
-          reason: "本地优先策略 — 使用本地模型",
+          reason: "æ¬å°ä¼åç­ç¥ â ä½¿ç¨æ¬å°æ¨¡å",
         };
       }
-      // 没有本地模型则回退到 API
+      // æ²¡ææ¬å°æ¨¡åååéå° API
       if (apiModels.length > 0) {
         return {
           modelId: apiModels[0].id,
-          reason: "本地模型不可用，回退到 API",
+          reason: "æ¬å°æ¨¡åä¸å¯ç¨ï¼åéå° API",
         };
       }
-      throw new Error("没有可用模型");
+      throw new Error("æ²¡æå¯ç¨æ¨¡å");
     }
 
     case "quality-first": {
       if (apiModels.length > 0) {
         return {
           modelId: apiModels[0].id,
-          reason: "质量优先策略 — 使用云端 API",
+          reason: "è´¨éä¼åç­ç¥ â ä½¿ç¨äºç«¯ API",
         };
       }
       if (localModels.length > 0) {
         return {
           modelId: localModels[0].id,
-          reason: "API 不可用，回退到本地模型",
+          reason: "API ä¸å¯ç¨ï¼åéå°æ¬å°æ¨¡å",
         };
       }
-      throw new Error("没有可用模型");
+      throw new Error("æ²¡æå¯ç¨æ¨¡å");
     }
 
     case "manual":
     default: {
-      // 根据消息复杂度自动选择
+      // æ ¹æ®æ¶æ¯å¤æåº¦èªå¨éæ©
       const complexity = estimateComplexity(messages);
       if (complexity === "simple" && localModels.length > 0) {
         return {
           modelId: localModels[0].id,
-          reason: "简单任务 → 本地免费模型",
+          reason: "ç®åä»»å¡ â æ¬å°åè´¹æ¨¡å",
         };
       }
       if (apiModels.length > 0) {
         return {
           modelId: apiModels[0].id,
-          reason: `复杂任务 → 云端 API 模型`,
+          reason: `å¤æä»»å¡ â äºç«¯ API æ¨¡å`,
         };
       }
       if (localModels.length > 0) {
         return {
           modelId: localModels[0].id,
-          reason: "API 不可用，使用本地模型兜底",
+          reason: "API ä¸å¯ç¨ï¼ä½¿ç¨æ¬å°æ¨¡åååº",
         };
       }
-      throw new Error("没有可用模型");
+      throw new Error("æ²¡æå¯ç¨æ¨¡å");
     }
   }
 }
