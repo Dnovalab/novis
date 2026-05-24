@@ -17,26 +17,26 @@ import {
 import { useFileStore, type FileNode } from "@/stores/file-store";
 import { cn } from "@/lib/utils";
 
-/** ä¸ä¸æèåä½ç½®ä¿¡æ¯ */
+/** 上下文菜单位置信息 */
 interface ContextMenuState {
   x: number;
   y: number;
   node: FileNode | null;
-  /** ç¶ç®å½è·¯å¾ï¼ç¨äº"æ°å»º"æä½ï¼ */
+  /** 父目录路径（用于"新建"操作） */
   parentPath: string;
 }
 
-/** ææ½æ¾ç½®ä½ç½® */
+/** 拖拽放置位置 */
 type DropPosition = "before" | "after" | "inside";
 
-/** ææ½ç¶æ */
+/** 拖拽状态 */
 interface DragState {
   node: FileNode;
   sourcePath: string;
 }
 
 /**
- * æä»¶æ ç»ä»¶ â æ¾ç¤ºå·¥ä½åºç®å½ç»æï¼å³é®èåæ¯ææä»¶æä½
+ * 文件树组件 — 显示工作区目录结构，右键菜单支持文件操作
  */
 export function FileTree() {
   const {
@@ -57,7 +57,7 @@ export function FileTree() {
     removeWorkspaceFolder,
   } = useFileStore();
 
-  // å³é®èåç¶æ
+  // 右键菜单状态
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [dragOverPath, setDragOverPath] = useState<string | null>(null);
@@ -65,7 +65,7 @@ export function FileTree() {
   const dragNodeRef = useRef<DragState | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  /** æ·»å æä»¶å¤¹å°å·¥ä½åº */
+  /** 添加文件夹到工作区 */
   const handleAddFolder = useCallback(async () => {
     if (!window.electronAPI) return;
     const dir = await window.electronAPI.fs.selectDirectory();
@@ -73,13 +73,13 @@ export function FileTree() {
 
     const tree = await window.electronAPI.fs.readDirectoryTree(dir);
     const flat = flattenDirTree(tree, "");
-    const dirName = dir.split("/").pop() ?? "é¡¹ç®";
+    const dirName = dir.split("/").pop() ?? "项目";
     addWorkspaceFolder({ path: dir, name: dirName }, flat.map((f) => `${dir}/${f}`));
   }, [addWorkspaceFolder]);
 
-  /** å·æ°æä»¶æ ï¼ä»ç£çéæ°è¯»åï¼ */
+  /** 刷新文件树（从磁盘重新读取） */
   const handleRefresh = useCallback(async () => {
-    if (!workspaceRoot || !window.electronAPI) return;
+    if (!workspaceRoot || !window if (!window.electronAPI) return;
     if (refreshing) return;
     setRefreshing(true);
     try {
@@ -87,19 +87,19 @@ export function FileTree() {
       const flat = flattenDirTree(tree, "");
       setFiles(buildFileTree(flat));
     } catch {
-      // éé»å¤ç
+      // 静默处理
     } finally {
       setRefreshing(false);
     }
   }, [workspaceRoot, setFiles, refreshing]);
 
-  // å³é®å¤ç
+  // 右键处理
   const handleContextMenu = useCallback(
     (e: React.MouseEvent, node: FileNode | null) => {
       e.preventDefault();
       e.stopPropagation();
 
-      // è®¡ç®ç¶è·¯å¾
+      // 计算父路径
       let parentPath = "";
       if (node?.type === "directory") {
         parentPath = node.path;
@@ -117,14 +117,14 @@ export function FileTree() {
     [],
   );
 
-  // ç¹å»å¤é¨å³é­èå
+  // 点击外部关闭菜单
   useEffect(() => {
     if (!ctxMenu) return;
     const handleClick = () => setCtxMenu(null);
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") setCtxMenu(null);
     };
-    // å»¶è¿æ·»å ï¼é¿åç«å³è§¦å
+    // 延迟添加，避免立即触发
     const timer = setTimeout(() => {
       document.addEventListener("click", handleClick);
       document.addEventListener("keydown", handleEscape);
@@ -136,16 +136,16 @@ export function FileTree() {
     };
   }, [ctxMenu]);
 
-  /** æ°å»ºæä»¶ */
+  /** 新建文件 */
   const handleNewFile = useCallback(async () => {
     if (!ctxMenu) return;
-    const name = window.prompt("è¾å¥æä»¶åï¼");
+    const name = window.prompt("输入文件名：");
     if (!name || name.trim() === "") return;
 
     const parent = ctxMenu.parentPath;
     const fullPath = parent ? `${parent}/${name.trim()}` : name.trim();
 
-    // Electron æ¨¡å¼ï¼éè¿ IPC åå»º
+    // Electron 模式：通过 IPC 创建
     if (window.electronAPI?.fs?.createItem) {
       const _absPath = workspaceRoot
         ? `${workspaceRoot}/${fullPath}`
@@ -156,7 +156,7 @@ export function FileTree() {
         "file",
       );
       if (!result.success) {
-        alert(`åå»ºå¤±è´¥: ${result.error}`);
+        alert(`创建失败: ${result.error}`);
         return;
       }
     }
@@ -169,10 +169,11 @@ export function FileTree() {
     setCtxMenu(null);
   }, [ctxMenu, workspaceRoot, addFileNode]);
 
-  /** æ°å»ºæä»¶å¤¹ */
+  /** 新建文件夹 */
   const handleNewFolder = useCallback(async () => {
     if (!ctxMenu) return;
-    const name = window.prompt("è¾å¥æä»¶å¤»åï¼");
+    const name = window.prompt("输入文件夹名：");    if (!ctxMenu) return;
+    const name = window.prompt("输入文件夹名：");
     if (!name || name.trim() === "") return;
 
     const parent = ctxMenu.parentPath;
@@ -185,7 +186,7 @@ export function FileTree() {
         "directory",
       );
       if (!result.success) {
-        alert(`åå»ºå¤±è´¥: ${result.error}`);
+        alert(`创建失败: ${result.error}`);
         return;
       }
     }
@@ -200,11 +201,11 @@ export function FileTree() {
     setCtxMenu(null);
   }, [ctxMenu, workspaceRoot, addFileNode]);
 
-  /** éå½å */
+  /** 重命名 */
   const handleRename = useCallback(async () => {
     if (!ctxMenu?.node) return;
     const oldName = ctxMenu.node.name;
-    const newName = window.prompt("éå½åä¸ºï¼", oldName);
+    const newName = window.prompt("重命名为：", oldName);
     if (!newName || newName.trim() === "" || newName.trim() === oldName) return;
 
     const trimmed = newName.trim();
@@ -214,7 +215,7 @@ export function FileTree() {
         : ctxMenu.node.path;
       const result = await window.electronAPI.fs.renameItem(absPath, trimmed);
       if (!result.success) {
-        alert(`éå½åå¤±è´¥: ${result.error}`);
+        alert(`重命名失败: ${result.error}`);
         return;
       }
     }
@@ -223,12 +224,12 @@ export function FileTree() {
     setCtxMenu(null);
   }, [ctxMenu, workspaceRoot, renameFileNode]);
 
-  /** å é¤ */
+  /** 删除 */
   const handleDelete = useCallback(async () => {
     if (!ctxMenu?.node) return;
-    const typeName = ctxMenu.node.type === "directory" ? "æä»¶å¤¹" : "æä»¶";
+    const typeName = ctxMenu.node.type === "directory" ? "文件夹" : "文件";
     const confirmed = window.confirm(
-      `ç¡®å®å é¤${typeName} "${ctxMenu.node.name}" åï¼æ­¤æä½ä¸å¯æ¤éã`,
+      `确定删除${typeName} "${ctxMenu.node.name}" 吗？此操作不可撤销。`,
     );
     if (!confirmed) return;
 
@@ -238,7 +239,7 @@ export function FileTree() {
         : ctxMenu.node.path;
       const result = await window.electronAPI.fs.deleteItem(absPath);
       if (!result.success) {
-        alert(`å é¤å¤±è´¥: ${result.error}`);
+        alert(`删除失败: ${result.error}`);
         return;
       }
     }
@@ -247,13 +248,13 @@ export function FileTree() {
     setCtxMenu(null);
   }, [ctxMenu, workspaceRoot, removeFileNode]);
 
-  /* ââ ææ½å¤ç ââ */
+  /* ── 拖拽处理 ── */
   const handleDragStart = useCallback(
     (e: React.DragEvent, node: FileNode) => {
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/plain", node.path);
       dragNodeRef.current = { node, sourcePath: node.path };
-      // è®©ææ½æ¶æåéæææ
+      // 让拖拽时有半透明效果
       const el = e.currentTarget as HTMLElement;
       requestAnimationFrame(() => {
         el.style.opacity = "0.5";
@@ -268,7 +269,7 @@ export function FileTree() {
       e.dataTransfer.dropEffect = "move";
 
       if (!dragNodeRef.current) return;
-      // ä¸è½æå°èªå·±èº«ä¸
+      // 不能拖到自己身上
       if (dragNodeRef.current.sourcePath === targetPath) {
         setDragOverPath(null);
         return;
@@ -278,7 +279,7 @@ export function FileTree() {
       const y = e.clientY - rect.top;
       const height = rect.height;
 
-      // å¤æ­ææ¾ä½ç½®
+      // 判断拖放位置
       let pos: DropPosition;
       if (targetPath !== dragNodeRef.current.sourcePath && y < height * 0.25) {
         pos = "before";
@@ -309,13 +310,13 @@ export function FileTree() {
 
       const pos = dropPosition;
 
-      // Electron æ¨¡å¼ï¼å®éç§»å¨æä»¶
+      // Electron 模式：实际移动文件
       if (window.electronAPI?.fs?.renameItem && workspaceRoot) {
         const targetParts = targetPath.split("/");
-        const _targetName = targetParts[targetParts.length - 1];
+        const targetName = targetParts[targetParts.length - 1];
         const targetDir = targetPath.substring(0, targetPath.lastIndexOf("/"));
 
-        // è®¡ç®ç®æ ç®å½
+        // 计算目标目录
         let destDir: string;
         if (pos === "inside") {
           destDir = targetPath;
@@ -324,19 +325,19 @@ export function FileTree() {
         }
 
         const sourceName = drag.node.name;
-        const _destPath = destDir ? `${workspaceRoot}/${destDir}/${sourceName}` : `${workspaceRoot}/${sourceName}`;
+        const destPath = destDir ? `${workspaceRoot}/${destDir}/${sourceName}` : `${workspaceRoot}/${sourceName}`;
         const sourceAbsPath = `${workspaceRoot}/${drag.sourcePath}`;
 
         window.electronAPI.fs.renameItem(sourceAbsPath, sourceName).then((r) => {
           if (!r.success) {
-            alert(`ç§»å¨å¤±è´¥: ${r.error}`);
+            alert(`移动失败: ${r.error}`);
             return;
           }
-          // æ´æ° store ä¸­çæ 
+          // 更新 store 中的树
           moveFileNode(drag.sourcePath, targetPath, pos);
         });
       } else {
-        // å¼åæ¨¡å¼ï¼ç´æ¥æ´æ°æ 
+        // 开发模式：直接更新树
         moveFileNode(drag.sourcePath, targetPath, pos);
       }
 
@@ -345,12 +346,12 @@ export function FileTree() {
     [workspaceRoot, moveFileNode, dropPosition],
   );
 
-  // æ¸çææ½æ ·å¼
+  // 清理拖拽样式
   useEffect(() => {
     const handleDragEnd = () => {
       dragNodeRef.current = null;
       setDragOverPath(null);
-      // æ¢å¤ææèç¹çéæåº¦
+      // 恢复所有节点的透明度
       document.querySelectorAll('[draggable="true"]').forEach((el) => {
         (el as HTMLElement).style.opacity = "";
       });
@@ -366,35 +367,35 @@ export function FileTree() {
         onContextMenu={(e) => handleContextMenu(e, null)}
       >
         <Folder className="mb-2 h-8 w-8 opacity-30" />
-        <p>ææ æå¼çé¡¹ç®</p>
-        <p className="mt-1 text-xs">éæ©æä»¶å¤¹ä»¥æµè§æä»¶</p>
+        <p>暂无打开的项目</p>
+        <p className="mt-1 text-xs">选择文件夹以浏览文件</p>
       </div>
     );
   }
 
   return (
     <div className="flex h-full flex-col">
-      {/* æ é¢æ  */}
+      {/* 标题栏 */}
       <div className="flex items-center justify-between border-b px-3 py-1.5">
         <span className="text-[10px] font-medium text-muted-foreground/70">
           {workspaceRoots.length > 1
-            ? `å·¥ä½åº (${workspaceRoots.length})`
+            ? `工作区 (${workspaceRoots.length})`
             : workspaceRoot
-              ? workspaceRoot.split("/").pop() || "é¡¹ç®"
-              : "æä»¶"}
+              ? workspaceRoot.split("/").pop() || "项目"
+              : "文件"}
         </span>
         <div className="flex items-center gap-0.5">
           <button
             onClick={expandAll}
             className="rounded p-0.5 text-muted-foreground/30 hover:text-foreground hover:bg-accent transition-colors"
-            title="å¨é¨å±å¼"
+            title="全部展开"
           >
             <ChevronsUpDown className="h-3 w-3 rotate-90" />
           </button>
           <button
             onClick={collapseAll}
             className="rounded p-0.5 text-muted-foreground/30 hover:text-foreground hover:bg-accent transition-colors"
-            title="å¨é¨æå "
+            title="全部折叠"
           >
             <ChevronsUpDown className="h-3 w-3 -rotate-90" />
           </button>
@@ -403,7 +404,7 @@ export function FileTree() {
               <button
                 onClick={handleAddFolder}
                 className="rounded p-0.5 text-muted-foreground/30 hover:text-foreground hover:bg-accent transition-colors"
-                title="æ·»å æä»¶å¤¹å°å·¥ä½åº"
+                title="添加文件夹到工作区"
               >
                 <FolderKanban className="h-3 w-3" />
               </button>
@@ -411,18 +412,18 @@ export function FileTree() {
                 onClick={handleRefresh}
                 disabled={refreshing}
                 className="rounded p-0.5 text-muted-foreground/50 hover:text-foreground hover:bg-accent transition-colors disabled:opacity-30"
-                title="å·æ°æä»¶æ "
+                title="刷新文件树"
               >
                 <RefreshCw
                   className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`}
                 />
               </button>
-            <>
+            </>
           )}
         </div>
       </div>
 
-      {/* å¤æ ¹ç®å½æ ç­¾ */}
+      {/* 多根目录标签 */}
       {workspaceRoots.length > 1 && (
         <div className="flex flex-wrap gap-1 border-b bg-muted/10 px-2 py-1.5">
           {workspaceRoots.map((root) => (
@@ -435,7 +436,7 @@ export function FileTree() {
               <button
                 onClick={() => removeWorkspaceFolder(root.path)}
                 className="ml-0.5 rounded-sm p-0.5 hover:bg-muted-foreground/20"
-                title="ç§»åºå·¥ä½åº"
+                title="移出工作区"
               >
                 <X className="h-2.5 w-2.5" />
               </button>
@@ -444,11 +445,304 @@ export function FileTree() {
         </div>
       )}
 
-      {/* æä»¶åè¡¨ */}
+      {/* 文件列表 */}
       <div
         className="flex-1 select-none overflow-y-auto py-1"
         onContextMenu={(e) => handleContextMenu(e, null)}
       >
         {files.map((node) => (
-          <TreeNode
-            key={[ÙK]BÙO^ÖæöFWÐ¢FWF×³Ð¢7FfTfÆUF×¶7FfTfÆUFÐ¢öäfÆT6Æ6³×¶÷VäfÆWÐ¢öåFövvÆTF#×·FövvÆTF&V7F÷'Ð¢öä6öçFWDÖVçS×¶æFÆT6öçFWDÖVçWÐ¢G&t÷fW%F×¶G&t÷fW%FÐ¢G&÷÷6Föã×¶G&÷÷6FöçÐ¢öäG&u7F'C×¶æFÆTG&u7F'GÐ¢öäG&t÷fW#×¶æFÆTG&t÷fW'Ð¢öäG&tÆVfS×¶æFÆTG&tÆVfWÐ¢öäG&÷×¶æFÆTG&÷Ð¢óà¢Ð ¢²ò¢Xû>JîùÎXÙR¢÷Ð¢¶7GÖVçRbb¢ÆF`¢&Vc×¶ÖVçU&VgÐ¢6Æ74æÖSÒ&fVB¢ÓSÖâ×rÕ³cÒ&÷VæFVBÖÖB&÷&FW"&r×÷÷fW"Ó6F÷rÖÖB ¢7GÆS×·²ÆVgC¢7GÖVçRçÂF÷¢7GÖVçRç×Ð¢à¢²ò¢¨.x+y»X[>i8ÞKÙÂ¢÷Ð¢²7GÖVçRææöFSòçGRÓÓÒ&F&V7F÷'"ÇÂ7GÖVçRææöFRÓÓÒçVÆÂbb¢Ãà¢ÄÖVçTFVÐ¢6öã×³ÄfÆUÇW26Æ74æÖSÒ&Ó2ãRrÓ2ãR"óçÐ¢Æ&VÃÒ.ik[»®ih~K»b ¢öä6Æ6³×¶æFÆTæWtfÆWÐ¢óà¢ÄÖVçTFVÐ¢6öã×³ÄföÆFW%ÇW26Æ74æÖSÒ&Ó2ãRrÓ2ãR"óçÐ¢Æ&VÃÒ.ik[»®ih~K»nZK ¢öä6Æ6³×¶æFÆTæWtföÆFW'Ð¢óà¢¶7GÖVçRææöFRbbÆFb6Æ74æÖSÒ&×Ó&÷&FW"×B"óçÐ¢Ãà¢Ð¢¶7GÖVçRææöFRbb¢Ãà¢ÄÖVçTFVÐ¢6öã×³ÅVæ6Â6Æ74æÖSÒ&Ó2ãRrÓ2ãR"óçÐ¢Æ&VÃÒ.xÞYÞYÒ ¢öä6Æ6³×¶æFÆU&VæÖWÐ¢óà¢ÄÖVçTFVÐ¢6öã×³ÅG&6"6Æ74æÖSÒ&Ó2ãRrÓ2ãR"óçÐ¢Æ&VÃÒ.XB ¢öä6Æ6³×¶æFÆTFVÆWFWÐ¢FævW ¢óà¢Âóà¢Ð¢ÂöFcà¢Ð¢ÂöFcà¢ÂöFcà¢°§Ð ¢ò¢¢Xû>JîùÎXÙ^¢ð¦gVæ7FöâÖVçTFVÒ°¢6öâÀ¢Æ&VÂÀ¢öä6Æ6²À¢FævW"À§Ó¢°¢6öã¢&V7Bå&V7DæöFS°¢Æ&VÃ¢7G&æs°¢öä6Æ6³¢ÓâföC°¢FævW#ó¢&ööÆVã°§Ò°¢&WGW&â¢Æ'WGFöà¢öä6Æ6³×¶öä6Æ6·Ð¢6Æ74æÖS×¶6â¢&fÆWrÖgVÆÂFV×2Ö6VçFW"vÓ"Ó2ÓãRFWBÖÆVgBFWB×2G&ç6FöâÖ6öÆ÷'2"À¢FævW ¢ò'FWB×&VBÓS÷fW#¦&r×&VBÓSó ¢¢'FWB×÷÷fW"Öf÷&Vw&÷VæB÷fW#¦&rÖ66VçB"À¢Ð¢à¢¶6öçÐ¢¶Æ&VÇÐ¢Âö'WGFöãà¢°§Ð ¢òòÓÓÓÓÓÒG&VTæöFRÓÓÓÓÓÐ ¦çFW&f6RG&VTæöFU&÷2°¢æöFS¢fÆTæöFS°¢FWF¢çVÖ&W#°¢7FfTfÆUF¢7G&ærÂçVÆÃ°¢öäfÆT6Æ6³¢F¢7G&ærÂæÖS¢7G&ærÓâföC°¢öåFövvÆTF#¢F¢7G&ærÓâföC°¢öä6öçFWDÖVçS¢S¢&V7BäÖ÷W6TWfVçBÂæöFS¢fÆTæöFRÓâföC°¢G&t÷fW%F¢7G&ærÂçVÆÃ°¢G&÷÷6Föã¢G&÷÷6Föã°¢öäG&u7F'C¢S¢&V7BäG&tWfVçBÂæöFS¢fÆTæöFRÓâföC°¢öäG&t÷fW#¢S¢&V7BäG&tWfVçBÂF&vWEF¢7G&ærÓâföC°¢öäG&tÆVfS¢ÓâföC°¢öäG&÷¢S¢&V7BäG&tWfVçBÂF&vWEF¢7G&ærÓâföC°§Ð ¦gVæ7FöâG&VTæöFR°¢æöFRÀ¢FWFÀ¢7FfTfÆUFÀ¢öäfÆT6Æ6²À¢öåFövvÆTF"À¢öä6öçFWDÖVçRÀ¢G&t÷fW%FÀ¢G&÷÷6FöâÀ¢öäG&u7F'BÀ¢öäG&t÷fW"À¢öäG&tÆVfRÀ¢öäG&÷À§Ó¢G&VTæöFU&÷2°¢6öç7B47FfRÒ7FfTfÆUFÓÓÒæöFRçF°¢6öç7B4G&t÷fW"ÒG&t÷fW%FÓÓÒæöFRçF° ¢ò¢¢k.iùNiKî{ÚîhÈ~zK®{«þûÈn:þ:j(¾kþhÈ~yºî[Ù^ûÈ¢ð¢6öç7BG&÷æF6F÷$6Æ72ÒÓâ°¢b4G&t÷fW"&WGW&â"#°¢bG&÷÷6FöâÓÓÒ&&Vf÷&R"&WGW&â&&÷&FW"×BÓ"&÷&FW"×B×&Ö'#°¢bG&÷÷6FöâÓÓÒ&gFW""&WGW&â&&÷&FW"Ö"Ó"&÷&FW"Ö"×&Ö'#°¢&WGW&â"#²òòç6FRyJ8Îiþ».zK ¢Ò° ¢ò¢¢h¹nXZ^yºî[Ù^i{n8Îiþ¹Kªâ¢ð¢6öç7BG&÷ç6FT6Æ72Ð¢4G&t÷fW"bbG&÷÷6FöâÓÓÒ&ç6FR ¢ò&&r×&Ö'ó&ærÓ&ærÖç6WB&ær×&Ö'ó3 ¢¢"#° ¢bæöFRçGRÓÓÒ&F&V7F÷'"°¢6öç7B4WæFVBÒæöFRæWæFVBóòfÇ6S° ¢&WGW&â¢ÆFcà¢Æ'WGFöà¢G&vv&ÆP¢öä6Æ6³×²ÓâöåFövvÆTF"æöFRçFÐ¢öä6öçFWDÖVçS×²RÓâöä6öçFWDÖVçRRÂæöFRÐ¢öäG&u7F'C×²RÓâöäG&u7F'BRÂæöFRÐ¢öäG&t÷fW#×²RÓâöäG&t÷fW"RÂæöFRçFÐ¢öäG&tÆVfS×¶öäG&tÆVfWÐ¢öäG&÷×²RÓâöäG&÷RÂæöFRçFÐ¢6Æ74æÖS×¶fÆWrÖgVÆÂFV×2Ö6VçFW"vÓÓ"ÓFWBÖÆVgBFWB×2G&ç6FöâÖ6öÆ÷'2÷fW#¦&rÖ×WFVBóSG°¢47FfRò&&rÖ×WFVBFWBÖf÷&Vw&÷VæB"¢'FWBÖ×WFVBÖf÷&Vw&÷VæB ¢ÒG¶G&÷æF6F÷$6Æ77ÒG¶G&÷ç6FT6Æ77ÖÐ¢7GÆS×·²FFætÆVgC¢G¶FWF¢b²××Ð¢à¢¶4WæFVBò¢Ä6Wg&öäF÷vâ6Æ74æÖSÒ&Ó2rÓ26&æ²Ó"óà¢¢¢Ä6Wg&öå&vB6Æ74æÖSÒ&Ó2rÓ26&æ²Ó"óà¢Ð¢¶4WæFVBò¢ÄföÆFW$÷Vâ6Æ74æÖSÒ&Ó2ãRrÓ2ãR6&æ²ÓFWB×VÆÆ÷rÓS"óà¢¢¢ÄföÆFW"6Æ74æÖSÒ&Ó2ãRrÓ2ãR6&æ²ÓFWB×VÆÆ÷rÓS"óà¢Ð¢Ç7â6Æ74æÖSÒ'G'Væ6FR#ç¶æöFRææÖWÓÂ÷7ãà¢Âö'WGFöãà ¢¶4WæFVBb`¢æöFRæ6ÆG&VãòæÖ6ÆBÓâ¢ÅG&VTæöFP¢¶W×¶6ÆBçFÐ¢æöFS×¶6ÆGÐ¢FWF×¶FWF²Ð¢7FfTfÆUF×¶7FfTfÆUFÐ¢öäfÆT6Æ6³×¶öäfÆT6Æ6·Ð¢öåFövvÆTF#×¶öåFövvÆTF'Ð¢öä6öçFWDÖVçS×¶öä6öçFWDÖVçWÐ¢G&t÷fW%F×¶G&t÷fW%FÐ¢G&÷÷6Föã×¶G&÷÷6FöçÐ¢öäG&u7F'C×¶öäG&u7F'GÐ¢öäG&t÷fW#×¶öäG&t÷fW'Ð¢öäG&tÆVfS×¶öäG&tÆVfWÐ¢öäG&÷×¶öäG&÷Ð¢óà¢Ð¢ÂöFcà¢°¢Ð ¢&WGW&â¢Æ'WGFöà¢G&vv&ÆP¢öä6Æ6³×²ÓâöäfÆT6Æ6²æöFRçFÂæöFRææÖRÐ¢öä6öçFWDÖVçS×²RÓâöä6öçFWDÖVçRRÂæöFRÐ¢öäG&u7F'C×²RÓâöäG&u7F'BRÂæöFRÐ¢öäG&t÷fW#×²RÓâöäG&t÷fW"RÂæöFRçFÐ¢öäG&tÆVfS×¶öäG&tÆVfWÐ¢öäG&÷×²RÓâöäG&÷RÂæöFRçFÐ¢6Æ74æÖS×¶fÆWrÖgVÆÂFV×2Ö6VçFW"vÓÓ"ÓFWBÖÆVgBFWB×2G&ç6FöâÖ6öÆ÷'2÷fW#¦&rÖ×WFVBóSG°¢47FfP¢ò&&r×&Ö'óFWB×&Ö' ¢¢'FWBÖ×WFVBÖf÷&Vw&÷VæB ¢ÒG¶G&÷æF6F÷$6Æ77ÒG¶G&÷ç6FT6Æ77ÖÐ¢7GÆS×·²FFætÆVgC¢G¶FWF¢b²#G××Ð¢à¢ÄfÆR6Æ74æÖSÒ&Ó2ãRrÓ2ãR6&æ²Ó÷6GÓc"óà¢Ç7â6Æ74æÖSÒ'G'Væ6FR#ç¶æöFRææÖWÓÂ÷7ãà¢Âö'WGFöãà¢°§Ð ¢òòÓÓÓÓÓÒ'VÆDfÆUG&VRÂ¥Â®K¨îjh¹þi[hÚâÓÓÓÓÓÐ ¢ò¢ ¢¢K¸îih~K»nzþ[èNi[{¸NièN[»®ih~K»nj	{¹>iè@¢¢&ÒF2ih~K»nzþ[èNi[{¸NûÈy»ZûK¨î[z^KÙÎXË®jyºî[Ù^ûÈ¢¢&WGW&ç2fÆTæöFRj	¢¢ð¦W÷'BgVæ7Föâ'VÆDfÆUG&VRF3¢7G&æuµÒ¢fÆTæöFUµÒ°¢6öç7B&ö÷C¢fÆTæöFUµÒÒµÓ° ¢f÷"6öç7BfÆUFöbF2°¢6öç7B'G2ÒfÆUFç7ÆB"ò"°¢ÆWB7W'&VçBÒ&ö÷C° ¢f÷"ÆWBÒ²Â'G2æÆVæwF²²²°¢6öç7B'BÒ'G5¶Ó°¢6öç7B4Æ7BÒÓÓÒ'G2æÆVæwFÒ°¢6öç7BgVÆÅFÒ'G2ç6Æ6RÂ²æ¦öâ"ò"° ¢b4Æ7B°¢7W'&VçBçW6°¢æÖS¢'BÀ¢F¢gVÆÅFÀ¢GS¢&fÆR"À¢Ò°¢ÒVÇ6R°¢ÆWBF"Ò7W'&VçBæfæB¢âÓââææÖRÓÓÒ'BbbâçGRÓÓÒ&F&V7F÷'"À¢2fÆTæöFRÂVæFVfæVC° ¢bF"°¢F"Ò°¢æÖS¢'BÀ¢F¢gVÆÅFÀ¢GS¢&F&V7F÷'"À¢6ÆG&Vã¢µÒÀ¢WæFVC¢ÓÓÒÀ¢Ó°¢7W'&VçBçW6F"°¢Ð¢7W'&VçBÒF"æ6ÆG&Vâ°¢Ð¢Ð¢Ð ¢&WGW&â6÷'DfÆUG&VR&ö÷B°§Ð ¦W÷'BgVæ7Föâ6÷'DfÆUG&VRæöFW3¢fÆTæöFUµÒ¢fÆTæöFUµÒ°¢6öç7BF'2ÒæöFW0¢æfÇFW"âÓââçGRÓÓÒ&F&V7F÷'"¢æÖâÓâ°¢ââæâÀ¢6ÆG&Vã¢âæ6ÆG&Vâò6÷'DfÆUG&VRâæ6ÆG&Vâ¢âæ6ÆG&VâÀ¢Ò¢ç6÷'BÂ"ÓâææÖRæÆö6ÆT6ö×&R"ææÖR° ¢6öç7BfÆW2ÒæöFW0¢æfÇFW"âÓââçGRÓÓÒ&fÆR"¢ç6÷'BÂ"ÓâææÖRæÆö6ÆT6ö×&R"ææÖR° ¢&WGW&â²ââæF'2ÂââæfÆW5Ó°§Ð ¢ò¢¢[b2ùNY¹îy¨Nyºî[Ù^j	h¸Þ[>K®zþ[èNX~¢ð¦gVæ7FöâfÆGFVäF%G&VR¢æöFW3¢'&Ç²æÖS¢7G&æs²F¢7G&æs²GS¢7G&æs²6ÆG&Vãó¢çµÒÓâÀ¢&VçC¢7G&ærÀ¢¢7G&æuµÒ°¢6öç7B&W7VÇC¢7G&æuµÒÒµÓ°¢f÷"6öç7BæöFRöbæöFW2°¢6öç7B&VÆFfUFÒ&VçBòG·&VçGÒòG¶æöFRææÖWÖ¢æöFRææÖS°¢bæöFRçGRÓÓÒ&fÆR"°¢&W7VÇBçW6&VÆFfUF°¢Ð¢bæöFRæ6ÆG&Vâ°¢&W7VÇBçW6ââæfÆGFVäF%G&VRæöFRæ6ÆG&VâÂ&VÆFfUF°¢Ð¢Ð¢&WGW&â&W7VÇC°§Ð
+        <TreeNode
+          key={node.path}
+          node={node}
+          depth={0}
+          activeFilePath={activeFilePath}
+          onFileClick={openFile}
+          onToggleDir={toggleDirectory}
+          onContextMenu={handleContextMenu}
+          dragOverPath={dragOverPath}
+          dropPosition={dropPosition}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        />
+      )}
+          
+
+      {/* 右键菜单 */}
+      {ctxMenu && (
+        <div
+          ref={menuRef}
+          className="fixed z-50 min-w-[160px] rounded-md border bg-popover py-1 shadow-md"
+          style={{ left: ctxMenu.x, top: ctxMenu.y }}
+        >
+          {/* 节点相关操作 */}
+          {(ctxMenu.node?.type === "directory" || ctxMenu.node === null) && (
+            <>
+              <MenuItem
+                icon={<FilePlus className="h-3.5 w-3.5" />}
+                label="新建文件"
+                onClick={handleNewFile}
+              />
+              <MenuItem
+                icon={<FolderPlus className="h-3.5 w-3.5" />}
+                label="新建文件夹"
+                onClick={handleNewFolder}
+              />
+              {ctxMenu.node && <div className="my-1 border-t" />}
+            </>
+          )}
+          {ctxMenu.node && (
+            <>
+              <MenuItem
+                icon={<Pencil className="h-3.5 w-3.5" />}
+                label="重命名"
+                onClick={handleRename}
+              />
+              <MenuItem
+                icon={<Trash2 className="h-3.5 w-3.5" />}
+                label="删除"
+                onClick={handleDelete}
+                danger
+              />
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  </div>
+  );
+}
+
+/** 右键菜单项 */
+function MenuItem({
+  icon,
+  label,
+  onClick,
+  danger,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors",
+        danger
+          ? "text-red-500 hover:bg-red-500/10"
+          : "text-popover-foreground hover:bg-accent",
+      )}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+// ====== TreeNode ======
+
+interface TreeNodeProps {
+  node: FileNode;
+  depth: number;
+  activeFilePath: string | null;
+  onFileClick: (path: string, name: string) => void;
+  onToggleDir: (path: string) => void;
+  onContextMenu: (e: React.MouseEvent, node: FileNode) => void;
+  dragOverPath: string | null;
+  dropPosition: DropPosition;
+  onDragStart: (e: React.DragEvent, node: FileNode) => void;
+  onDragOver: (e: React.DragEvent, targetPath: string) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent, targetPath: string) => void;
+}
+
+function TreeNode({
+  node,
+  depth,
+  activeFilePath,
+  onFileClick,
+  onToggleDir,
+  onContextMenu,
+  dragOverPath,
+  dropPosition,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+}: TreeNodeProps) {
+  const isActive = activeFilePath === node.path;
+  const isDragOver = dragOverPath === node.path;
+
+  /** 渲染放置指示线（顶部/底部边框） */
+  const dropIndicatorClass = (() => {
+    if (!isDragOver) return "";
+    if (dropPosition === "before") return "border-t-2 border-t-primary";
+    if (dropPosition === "after") return "border-b-2 border-b-primary";
+    return ""; // inside 用背景色表示
+  })();
+
+  /** 拖入目录时背景高亮 */
+  const dropInsideClass =
+    isDragOver && dropPosition === "inside"
+      ? "bg-primary/10 ring-1 ring-inset ring-primary/30"
+      : "";
+
+  if (node.type === "directory") {
+    const isExpanded = node.expanded ?? false;
+
+    return (
+      <div>
+        <button
+          draggable
+          onClick={() => onToggleDir(node.path)}
+          onContextMenu={(e) => onContextMenu(e, node)}
+          onDragStart={(e) => onDragStart(e, node)}
+          onDragOver={(e) => onDragOver(e, node.path)}
+          onDragLeave={onDragLeave}
+          onDrop={(e) => onDrop(e, node.path)}
+          className={`flex w-full items-center gap-1 px-2 py-1 text-left text-xs transition-colors hover:bg-muted/50 ${
+            isActive ? "bg-muted text-foreground" : "text-muted-foreground"
+          } ${dropIndicatorClass} ${dropInsideClass}`}
+          style={{ paddingLeft: `${depth * 16 + 8}px` }}
+        >
+          {isExpanded ? (
+            <ChevronDown className="h-3 w-3 shrink-0" />
+          ) : (
+            <ChevronRight className="h-3 w-3 shrink-0" />
+          )}
+          {isExpanded ? (
+            <FolderOpen className="h-3.5 w-3.5 shrink-0 text-yellow-500" />
+          ) : (
+            <Folder className="h-3.5 w-3.5 shrink-0 text-yellow-500" />
+          )}
+          <span className="truncate">{node.name}</span>
+        </button>
+
+        {isExpanded &&
+          node.children?.map((child) => (
+            <TreeNode
+              key={child.path}
+              node={child}
+              depth={depth + 1}
+              activeFilePath={activeFilePath}
+              onFileClick={onFileClick}
+              onToggleDir={onToggleDir}
+              onContextMenu={onContextMenu}
+              dragOverPath={dragOverPath}
+              dropPosition={dropPosition}
+              onDragStart={onDragStart}
+              onDragOver={onDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}
+            />
+          ))}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      draggable
+      onClick={() => onFileClick(node.path, node.name)}
+      onContextMenu={(e) => onContextMenu(e, node)}
+      onDragStart={(e) => onDragStart(e, node)}
+      onDragOver={(e) => onDragOver(e, node.path)}
+      onDragLeave={onDragLeave}
+      onDrop={(e) => onDrop(e, node.path)}
+      className={`flex w-full items-center gap-1 px-2 py-1 text-left text-xs transition-colors hover:bg-muted/50 ${
+        isActive
+          ? "bg-primary/10 text-primary"
+          : "text-muted-foreground"
+      } ${dropIndicatorClass} ${dropInsideClass}`}
+      style={{ paddingLeft: `${depth * 16 + 24}px` }}
+    >
+      <File className="h-3.5 w-3.5 shrink-0 opacity-60" />
+      <span className="truncate">{node.name}</span>
+    </button>
+  );
+}
+
+// ====== buildFileTree (用于模拟数据) ======
+
+/**
+ * 从文件路径数组构建文件树结构
+ * @param paths 文件路径数组（相对于工作区根目录）
+ * @returns FileNode 树
+ */
+export function buildFileTree(paths: string[]): FileNode[] {
+  const root: FileNode[] = [];
+
+  for (const filePath of paths) {
+    const parts = filePath.split("/");
+    let current = root;
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      const isLast = i === parts.length - 1;
+      const fullPath = parts.slice(0, i + 1).join("/");
+
+      if (isLast) {
+        current.push({
+          name: part,
+          path: fullPath,
+          type: "file",
+        });
+      } else {
+        let dir = current.find(
+          (n) => n.name === part && n.type === "directory",
+        ) as FileNode | undefined;
+
+        if (!dir) {
+          dir = {
+            name: part,
+            path: fullPath,
+            type: "directory",
+            children: [],
+            expanded: i === 0,
+          };
+          current.push(dir);
+        }
+        current = dir.children!;
+      }
+    }
+  }
+
+  return sortFileTree(root);
+}
+
+export function sortFileTree(nodes: FileNode[]): FileNode[] {
+  const dirs = nodes
+    .filter((n) => n.type === "directory")
+    .map((n) => ({
+      ...n,
+      children: n.children ? sortFileTree(n.children) : n.children,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const files = nodes
+    .filter((n) => n.type === "file")
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return [...dirs, ...files];
+}
+
+/** 将 IPC 返回的目录树拍平为路径列表 */
+function flattenDirTree(
+  nodes: Array<{ name: string; path: string; type: string; children?: any[] }>,
+  parent: string,
+): string[] {
+  const result: string[] = [];
+  for (const node of nodes) {
+    const relativePath = parent ? `${parent}/${node.name}` : node.name;
+    if (node.type === "file") {
+      result.push(relativePath);
+    }
+    if (node.children) {
+      result.push(...flattenDirTree(node.children, relativePath));
+    }
+  }
+  return result;
+}
