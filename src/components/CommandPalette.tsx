@@ -1,8 +1,8 @@
 /**
- * CommandPalette — 命令面板 (Ctrl+Shift+P / Cmd+Shift+P)
+ * CommandPalette â å½ä»¤é¢æ¿ (Ctrl+Shift+P / Cmd+Shift+P)
  *
- * 全局命令搜索和执行，类似 VS Code 的命令面板。
- * 显示所有已注册命令，支持模糊搜索。
+ * å¨å±å½ä»¤æç´¢åæ§è¡ï¼ç±»ä¼¼ VS Code çå½ä»¤é¢æ¿ã
+ * æ¾ç¤ºææå·²æ³¨åå½ä»¤ï¼æ¯ææ¨¡ç³æç´¢ã
  */
 
 import { useEffect, useRef, useState, useMemo } from "react";
@@ -22,7 +22,7 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // 过滤命令
+  // è¿æ»¤å½ä»¤
   const filtered = useMemo(() => {
     if (!query.trim()) return commands;
     const q = query.toLowerCase();
@@ -34,7 +34,7 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
     );
   }, [query, commands]);
 
-  // 按分类分组
+  // æåç±»åç»
   const grouped = useMemo(() => {
     const groups = new Map<string, Command[]>();
     for (const cmd of filtered) {
@@ -44,14 +44,14 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
     return Array.from(groups.entries());
   }, [filtered]);
 
-  // 选中索引边界
+  // éä¸­ç´¢å¼è¾¹ç
   useEffect(() => {
     if (selectedIndex >= filtered.length) {
       setSelectedIndex(Math.max(0, filtered.length - 1));
     }
   }, [filtered.length, selectedIndex]);
 
-  // 自动聚焦
+  // èªå¨èç¦
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -60,7 +60,7 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
     }
   }, [open]);
 
-  // 键盘导航
+  // é®çå¯¼èª
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -82,7 +82,7 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
     onClose();
   };
 
-  // 滚动到选中项
+  // æ»å¨å°éä¸­é¡¹
   useEffect(() => {
     if (!listRef.current) return;
     const selected = listRef.current.querySelector("[data-selected='true']");
@@ -93,7 +93,7 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
 
   if (!open) return null;
 
-  // 全局索引（用于 selectedIndex 定位）
+  // å¨å±ç´¢å¼ï¼ç¨äº selectedIndex å®ä½ï¼
   let globalIndex = -1;
 
   return (
@@ -104,7 +104,7 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
       }}
     >
       <div className="w-full max-w-lg rounded-lg border bg-popover shadow-2xl">
-        {/* 搜索框 */}
+        {/* æç´¢æ¡ */}
         <div className="flex items-center border-b px-3 py-2">
           <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
           <input
@@ -115,20 +115,20 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDown}
-            placeholder="输入命令名称…"
+            placeholder="è¾å¥å½ä»¤åç§°â¦"
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
           />
           <span className="text-[10px] text-muted-foreground/40">ESC</span>
         </div>
 
-        {/* 命令列表 */}
+        {/* å½ä»¤åè¡¨ */}
         <div
           ref={listRef}
           className="max-h-80 overflow-y-auto p-1"
         >
           {filtered.length === 0 ? (
             <div className="py-6 text-center text-xs text-muted-foreground">
-              未找到匹配的命令
+              æªæ¾å°å¹éçå½ä»¤
             </div>
           ) : (
             grouped.map(([category, cmds]) => (
@@ -169,9 +169,9 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
           )}
         </div>
 
-        {/* 底部提示 */}
+        {/* åºé¨æç¤º */}
         <div className="border-t px-3 py-1.5 text-[9px] text-muted-foreground/40">
-          ↑↓ 导航 · Enter 执行 · ESC 关闭
+          ââ å¯¼èª Â· Enter æ§è¡ Â· ESC å³é­
         </div>
       </div>
     </div>
