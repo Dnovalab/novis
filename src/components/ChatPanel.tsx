@@ -16,7 +16,7 @@ export function ChatPanel() {
     useChatStore();
   const { models, activeModelId } = useSettingsStore();
   const [input, setInput] = useState("");
-  const [, setStreamingId] = useState<string | null>(null);
+  const [_streamingId, setStreamingId] = useState<string | null>(null);
   const [streamingContent, setStreamingContent] = useState("");
   const [lastUsage, setLastUsage] = useState<{
     [messageId: string]: TokenUsage;
