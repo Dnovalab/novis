@@ -1,7 +1,7 @@
 /**
- * ExtensionsPanel — 扩展/集成面板
+ * ExtensionsPanel â æ©å±/éæé¢æ¿
  *
- * 展示当前可用的工具和集成，以及开发中的功能预告。
+ * å±ç¤ºå½åå¯ç¨çå·¥å·åéæï¼ä»¥åå¼åä¸­çåè½é¢åã
  */
 
 import { Puzzle, GitBranch, Terminal, Cpu, Search, Brain, ListTodo, FlaskConical } from "lucide-react";
@@ -19,56 +19,56 @@ interface ExtensionItem {
 const extensions: ExtensionItem[] = [
   {
     id: "git",
-    name: "Git 版本控制",
-    description: "查看变更、暂存、提交、切换分支、查看历史",
+    name: "Git çæ¬æ§å¶",
+    description: "æ¥çåæ´ãæå­ãæäº¤ãåæ¢åæ¯ãæ¥çåå²",
     icon: GitBranch,
     status: "ready",
     version: "1.0",
   },
   {
     id: "search",
-    name: "文件搜索",
-    description: "按文件名和内容搜索项目文件",
+    name: "æä»¶æç´¢",
+    description: "ææä»¶åååå®¹æç´¢é¡¹ç®æä»¶",
     icon: Search,
     status: "ready",
     version: "1.0",
   },
   {
     id: "memory",
-    name: "AI 记忆系统",
-    description: "持久化项目记忆，自动注入对话上下文",
+    name: "AI è®°å¿ç³»ç»",
+    description: "æä¹åé¡¹ç®è®°å¿ï¼èªå¨æ³¨å¥å¯¹è¯ä¸ä¸æ",
     icon: Brain,
     status: "ready",
     version: "1.0",
   },
   {
     id: "pm",
-    name: "项目管理",
-    description: "计划和任务管理、AI 自动生成计划、检查点",
+    name: "é¡¹ç®ç®¡ç",
+    description: "è®¡ååä»»å¡ç®¡çãAI èªå¨çæè®¡åãæ£æ¥ç¹",
     icon: ListTodo,
     status: "ready",
     version: "1.0",
   },
   {
     id: "terminal",
-    name: "终端集成",
-    description: "在 IDE 内执行终端命令",
+    name: "ç»ç«¯éæ",
+    description: "å¨ IDE åæ§è¡ç»ç«¯å½ä»¤",
     icon: Terminal,
     status: "ready",
     version: "1.0",
   },
   {
     id: "multi-agent",
-    name: "多 Agent 流水线",
-    description: "PM Agent 分配任务到子 Agent 自动执行",
+    name: "å¤ Agent æµæ°´çº¿",
+    description: "PM Agent åéä»»å¡å°å­ Agent èªå¨æ§è¡",
     icon: Cpu,
     status: "ready",
     version: "1.0",
   },
   {
     id: "code-review",
-    name: "AI 代码审查",
-    description: "自动审查代码变更，发现潜在问题",
+    name: "AI ä»£ç å®¡æ¥",
+    description: "èªå¨å®¡æ¥ä»£ç åæ´ï¼åç°æ½å¨é®é¢",
     icon: FlaskConical,
     status: "ready",
     version: "1.0",
@@ -76,9 +76,9 @@ const extensions: ExtensionItem[] = [
 ];
 
 const statusLabels: Record<string, string> = {
-  ready: "已就绪",
-  dev: "开发中",
-  planned: "规划中",
+  ready: "å·²å°±ç»ª",
+  dev: "å¼åä¸­",
+  planned: "è§åä¸­",
 };
 
 const statusColors: Record<string, string> = {
@@ -90,18 +90,18 @@ const statusColors: Record<string, string> = {
 export function ExtensionsPanel() {
   return (
     <div className="flex h-full flex-col">
-      {/* 面板头部 */}
+      {/* é¢æ¿å¤´é¨ */}
       <div className="border-b px-3 py-2">
         <div className="flex items-center gap-1.5">
           <Puzzle className="h-3.5 w-3.5 text-primary" />
-          <span className="text-xs font-medium">扩展与集成</span>
+          <span className="text-xs font-medium">æ©å±ä¸éæ</span>
         </div>
         <p className="mt-0.5 text-[9px] text-muted-foreground/60">
-          Novis 的功能以扩展方式组织
+          Novis çåè½ä»¥æ©å±æ¹å¼ç»ç»
         </p>
       </div>
 
-      {/* 扩展列表 */}
+      {/* æ©å±åè¡¨ */}
       <div className="flex-1 overflow-y-auto p-2">
         <div className="space-y-1">
           {extensions.map((ext) => (
@@ -143,10 +143,10 @@ export function ExtensionsPanel() {
           ))}
         </div>
 
-        {/* 底部信息 */}
+        {/* åºé¨ä¿¡æ¯ */}
         <div className="mt-4 border-t pt-3 text-center">
           <p className="text-[9px] text-muted-foreground/40">
-            Novis v0.1.0-alpha · 开源本地 AI 编程平台
+            Novis v0.1.0-alpha Â· å¼æºæ¬å° AI ç¼ç¨å¹³å°
           </p>
         </div>
       </div>
