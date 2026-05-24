@@ -15,16 +15,13 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import {
   GitBranch,
   GitCommit,
-  GitPullRequest,
   FileCode,
   Plus,
   Trash2,
-  RotateCw,
   ChevronDown,
   ChevronUp,
   ChevronRight,
   CircleDot,
-  Square,
   Check,
   X,
   Loader2,
@@ -75,7 +72,6 @@ export function GitPanel() {
     checkRepo,
     initRepo,
     refreshAll,
-    refreshStatus,
     refreshLog,
     loadDiff,
     clearDiff,
@@ -273,7 +269,7 @@ export function GitPanel() {
     }
   };
 
-  const statusLabel = (s: string) => {
+  const _statusLabel = (s: string) => {
     const map: Record<string, string> = {
       modified: "修改",
       added: "新增",
