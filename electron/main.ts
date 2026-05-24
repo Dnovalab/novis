@@ -3,7 +3,6 @@ import * as path from "path";
 import * as fs from "fs";
 import { exec, spawn } from "child_process";
 import { ModelGateway } from "./model-gateway";
-import * as os from "os";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -565,15 +564,17 @@ ipcMain.handle("terminal:spawn", async (_event, cwd?: string) => {
   const shellPath = process.platform === "win32" ? "cmd.exe" : "/bin/bash";
   const shellArgs = process.platform === "win32" ? [] : ["--login"];
 
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const homedir = require("os").homedir();
   const proc = spawn(shellPath, shellArgs, {
-    cwd: cwd || process.cwd() || os.homedir(),
+    cwd: cwd || process.cwd() || homedir,
     env: { ...process.env, TERM: "xterm-256color" },
     stdio: ["pipe", "pipe", "pipe"],
   });
 
   terminalProcesses.set(sessionId, {
     proc,
-    cwd: cwd || process.cwd() || os.homedir(),
+    cwd: cwd || process.cwd() || homedir,
   });
 
   // stdout 数据 → 渲染进程
