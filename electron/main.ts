@@ -2,17 +2,17 @@ import { app, BrowserWindow, ipcMain, shell, dialog } from "electron";
 import * as path from "path";
 import * as fs from "fs";
 import { exec, spawn } from "child_process";
-import { ModelGateway } from "./model-gateway";
+import { ModelGateway, ChatRequest } from "./model-gateway";
 
 let mainWindow: BrowserWindow | null = null;
 
 const isDev = process.env.NODE_ENV === "development" || !app.isPackaged;
 
-// ====== 模型网关 ======
+// ====== æ¨¡åç½å³ ======
 
 const gateway = new ModelGateway();
 
-// ====== 窗口管理 ======
+// ====== çªå£ç®¡ç ======
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -29,12 +29,12 @@ function createWindow(): void {
     },
   });
 
-  // 窗口准备好后再显示，避免白屏闪烁
+  // çªå£åå¤å¥½ååæ¾ç¤ºï¼é¿åç½å±éªç
   mainWindow.once("ready-to-show", () => {
     mainWindow?.show();
   });
 
-  // 外部链接在默认浏览器打开
+  // å¤é¨é¾æ¥å¨é»è®¤æµè§å¨æå¼
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: "deny" };
@@ -48,9 +48,9 @@ function createWindow(): void {
   }
 }
 
-// ====== IPC 处理器 ======
+// ====== IPC å¤çå¨ ======
 
-// 应用信息
+// åºç¨ä¿¡æ¯
 ipcMain.handle("get-app-info", () => {
   return {
     version: app.getVersion(),
@@ -60,32 +60,32 @@ ipcMain.handle("get-app-info", () => {
   };
 });
 
-// ====== 模型相关 IPC ======
+// ====== æ¨¡åç¸å³ IPC ======
 
-/** 获取可用模型列表 */
+/** è·åå¯ç¨æ¨¡ååè¡¨ */
 ipcMain.handle("model:get-models", () => {
   return gateway.getModels();
 });
 
-/** 添加自定义模型 */
+/** æ·»å èªå®ä¹æ¨¡å */
 ipcMain.handle("model:add-model", (_event, config) => {
   gateway.addModel(config);
   return { success: true };
 });
 
-/** 删除模型 */
+/** å é¤æ¨¡å */
 ipcMain.handle("model:remove-model", (_event, id: string) => {
   gateway.removeModel(id);
   return { success: true };
 });
 
-/** 发送聊天请求（非流式） */
+/** åéèå¤©è¯·æ±ï¼ç¬¦åä½ï¼ */
 ipcMain.handle(
   "model:chat",
   async (
     _event,
     modelId: string,
-    request: { model: string; messages: Array<{ role: string; content: string }>; temperature?: number; maxTokens?: number },
+    request: ChatRequest,
   ) => {
     try {
       const result = await gateway.chat(modelId, request, undefined);
@@ -93,54 +93,54 @@ ipcMain.handle(
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : "未知错误",
+        error: error instanceof Error ? error.message : "æªç¥éè¯¯",
       };
     }
   },
 );
 
-/** 发送聊天请求（流式） */
+/** åéèå¤©è¯·æ±ï¼æµå¼ï¼ */
 ipcMain.handle(
   "model:chat-stream",
   async (
     _event,
     modelId: string,
-    request: { model: string; messages: Array<{ role: string; content: string }>; temperature?: number; maxTokens?: number },
+    request: ChatRequest,
   ) => {
     try {
       await gateway.chat(modelId, { ...request, stream: true }, mainWindow!);
       return { success: true };
     } catch (error) {
-      // 通过流式通道发送错误
+      // éè¿æµå¼ééåééè¯¯
       mainWindow?.webContents.send("model:stream-error", {
         id: `chat-${Date.now()}`,
-        error: error instanceof Error ? error.message : "未知错误",
+        error: error instanceof Error ? error.message : "æªç¥éè¯¯",
       });
       return { success: false };
     }
   },
 );
 
-/** 取消请求 */
+/** åæ¶è¯·æ± */
 ipcMain.handle("model:abort", (_event, modelId: string) => {
   gateway.abort(modelId);
   return { success: true };
 });
 
-// ====== 文件系统 IPC ======
+// ====== æä»¶ç³»ç» IPC ======
 
-/** 选择文件夹对话框 */
+/** éæ©æä»¶å¤¹å¯¹è¯æ¡ */
 ipcMain.handle("fs:select-directory", async () => {
   if (!mainWindow) return null;
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ["openDirectory"],
-    title: "选择项目文件夹",
+    title: "éæ©é¡¹ç®æä»¶å¤¹",
   });
   if (result.canceled || result.filePaths.length === 0) return null;
   return result.filePaths[0];
 });
 
-/** 读取目录内容（一层） */
+/** è¯»åç®å½åå®¹ï¼ä¸å±ï¼ */
 ipcMain.handle("fs:read-directory", async (_event, dirPath: string) => {
   try {
     const entries = fs.readdirSync(dirPath, { withFileTypes: true });
@@ -160,7 +160,7 @@ ipcMain.handle("fs:read-directory", async (_event, dirPath: string) => {
   }
 });
 
-/** 递归读取目录树（最多 4 层） */
+/** éå½è¯»åç®å½æ ï¼æå¤ 4 å±ï¼ */
 ipcMain.handle("fs:read-directory-tree", async (_event, dirPath: string) => {
   try {
     return readDirectoryTree(dirPath, dirPath, 0);
@@ -169,7 +169,7 @@ ipcMain.handle("fs:read-directory-tree", async (_event, dirPath: string) => {
   }
 });
 
-/** 读取文件内容 */
+/** è¯»åæä»¶åå®¹ */
 ipcMain.handle("fs:read-file", async (_event, filePath: string) => {
   try {
     const content = fs.readFileSync(filePath, "utf-8");
@@ -179,7 +179,7 @@ ipcMain.handle("fs:read-file", async (_event, filePath: string) => {
   }
 });
 
-/** 写入文件 */
+/** åå¥æä»¶ */
 ipcMain.handle("fs:write-file", async (_event, filePath: string, content: string) => {
   try {
     fs.writeFileSync(filePath, content, "utf-8");
@@ -189,7 +189,7 @@ ipcMain.handle("fs:write-file", async (_event, filePath: string, content: string
   }
 });
 
-/** 新建文件/目录 */
+/** æ°å»ºæä»¶/ç®å½ */
 ipcMain.handle("fs:create-item", async (_event, parentPath: string, name: string, type: "file" | "directory") => {
   try {
     const fullPath = path.join(parentPath, name);
@@ -204,7 +204,7 @@ ipcMain.handle("fs:create-item", async (_event, parentPath: string, name: string
   }
 });
 
-/** 删除文件/目录 */
+/** å é¤æä»¶/ç®å½ */
 ipcMain.handle("fs:delete-item", async (_event, targetPath: string) => {
   try {
     fs.rmSync(targetPath, { recursive: true, force: true });
@@ -214,7 +214,7 @@ ipcMain.handle("fs:delete-item", async (_event, targetPath: string) => {
   }
 });
 
-/** 重命名文件/目录 */
+/** éå½åæä»¶/ç®å½ */
 ipcMain.handle("fs:rename-item", async (_event, oldPath: string, newName: string) => {
   try {
     const dir = path.dirname(oldPath);
@@ -229,13 +229,13 @@ ipcMain.handle("fs:rename-item", async (_event, oldPath: string, newName: string
 // ====== Git IPC ======
 
 /**
- * 在指定目录执行 git 命令并返回输出
+ * å¨æå®ç®å½æ§è¡ git å½ä»¤å¹¶è¿åè¾åº
  */
 function gitExec(repoPath: string, args: string): Promise<string> {
   return new Promise((resolve, reject) => {
     exec(`git ${args}`, { cwd: repoPath, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
       if (err) {
-        // git 命令返回非零退出码也可能是正常情况（如 status 有未跟踪文件）
+        // git å½ä»¤è¿åéé¶éåºç ä¹å¯è½æ¯æ­£å¸¸æåµï¼å¦ status ææªè·è¸ªæä»¶ï¼
         reject(new Error(stderr.trim() || err.message));
       } else {
         resolve(stdout);
@@ -244,7 +244,7 @@ function gitExec(repoPath: string, args: string): Promise<string> {
   });
 }
 
-/** 检查是否 git 仓库 */
+/** æ£æ¥æ¯å¦ git ä»åº */
 ipcMain.handle("git:is-repo", async (_event, repoPath: string) => {
   try {
     await gitExec(repoPath, "rev-parse --git-dir");
@@ -254,7 +254,7 @@ ipcMain.handle("git:is-repo", async (_event, repoPath: string) => {
   }
 });
 
-/** 初始化 git 仓库 */
+/** åå§å git ä»åº */
 ipcMain.handle("git:init", async (_event, repoPath: string) => {
   try {
     await gitExec(repoPath, "init");
@@ -264,25 +264,25 @@ ipcMain.handle("git:init", async (_event, repoPath: string) => {
   }
 });
 
-/** 获取仓库状态 */
+/** è·åä»åºç¶æ */
 ipcMain.handle("git:status", async (_event, repoPath: string) => {
   try {
-    // 解析 git status --porcelain -b
+    // è§£æ git status --porcelain -b
     const output = await gitExec(repoPath, "status --porcelain -b");
     const lines = output.split("\n").filter((l) => l.trim());
 
-    // 第一行是分支信息: "## main...origin/main [ahead 1, behind 2]"
+    // ç¬¬ä¸è¡æ¯åæ¯ä¿¡æ¯: "## main...origin/main [ahead 1, behind 2]"
     const branchLine = lines[0] || "## unknown";
     const branchMatch = branchLine.match(/^## (\S+)/);
     const currentBranch = branchMatch ? branchMatch[1] : "unknown";
 
-    // 解析 ahead/behind
+    // è§£æ ahead/behind
     const aheadMatch = branchLine.match(/ahead (\d+)/);
     const behindMatch = branchLine.match(/behind (\d+)/);
     const ahead = aheadMatch ? parseInt(aheadMatch[1]) : 0;
     const behind = behindMatch ? parseInt(behindMatch[1]) : 0;
 
-    // 解析变更文件
+    // è§£æåæ´æä»¶
     const changes: Array<{
       path: string;
       oldPath?: string;
@@ -297,7 +297,7 @@ ipcMain.handle("git:status", async (_event, repoPath: string) => {
       const xy = line.substring(0, 2);
       const rawPath = line.substring(3).trim();
 
-      // 解析重命名: "R  oldPath -> newPath"
+      // è§£æéå½å: "R  oldPath -> newPath"
       let filePath = rawPath;
       let oldPath: string | undefined;
       const renameMatch = rawPath.match(/^(.+?) -> (.+)$/);
@@ -306,7 +306,7 @@ ipcMain.handle("git:status", async (_event, repoPath: string) => {
         filePath = renameMatch[2];
       }
 
-      // XY 编码: X=staged status, Y=unstaged status
+      // XY ç¼ç : X=staged status, Y=unstaged status
       const stagedChar = xy[0];
       const unstagedChar = xy[1];
 
@@ -354,7 +354,7 @@ ipcMain.handle("git:status", async (_event, repoPath: string) => {
   }
 });
 
-/** 获取文件 diff */
+/** è·åæä»¶ diff */
 ipcMain.handle(
   "git:diff",
   async (_event, repoPath: string, filePath: string, staged: boolean) => {
@@ -373,7 +373,7 @@ ipcMain.handle(
   },
 );
 
-/** 获取指定 ref 的文件内容（用于 diff 编辑器对比） */
+/** è·åæå® ref çæä»¶åå®¹ï¼ç¨äº diff ç¼è¾å¨å¯¹æ¯ï¼ */
 ipcMain.handle(
   "git:show-file",
   async (_event, repoPath: string, filePath: string, ref: string) => {
@@ -391,7 +391,7 @@ ipcMain.handle(
   },
 );
 
-/** 提交暂存变更 */
+/** æäº¤æå­åæ´ */
 ipcMain.handle(
   "git:commit",
   async (_event, repoPath: string, message: string) => {
@@ -404,7 +404,7 @@ ipcMain.handle(
   },
 );
 
-/** 获取提交历史 */
+/** è·åæäº¤åå² */
 ipcMain.handle(
   "git:log",
   async (_event, repoPath: string, maxCount = 30) => {
@@ -435,7 +435,7 @@ ipcMain.handle(
   },
 );
 
-/** 获取分支列表 */
+/** è·ååæ¯åè¡¨ */
 ipcMain.handle("git:branches", async (_event, repoPath: string) => {
   try {
     const output = await gitExec(repoPath, "branch");
@@ -452,7 +452,7 @@ ipcMain.handle("git:branches", async (_event, repoPath: string) => {
   }
 });
 
-/** 切换分支或 checkout 文件 */
+/** åæ¢åæ¯æ checkout æä»¶ */
 ipcMain.handle(
   "git:checkout",
   async (_event, repoPath: string, target: string) => {
@@ -465,7 +465,7 @@ ipcMain.handle(
   },
 );
 
-/** 暂存文件 */
+/** æå­æä»¶ */
 ipcMain.handle(
   "git:add",
   async (_event, repoPath: string, filePath: string) => {
@@ -478,7 +478,7 @@ ipcMain.handle(
   },
 );
 
-/** 取消暂存 */
+/** åæ¶æå­ */
 ipcMain.handle(
   "git:unstage",
   async (_event, repoPath: string, filePath: string) => {
@@ -491,7 +491,7 @@ ipcMain.handle(
   },
 );
 
-/** 批量暂存所有 */
+/** æ¹éæå­ææ */
 ipcMain.handle("git:add-all", async (_event, repoPath: string) => {
   try {
     await gitExec(repoPath, `add -A`);
@@ -501,7 +501,7 @@ ipcMain.handle("git:add-all", async (_event, repoPath: string) => {
   }
 });
 
-/** 取消暂存所有 */
+/** åæ¶æå­ææ */
 ipcMain.handle("git:unstage-all", async (_event, repoPath: string) => {
   try {
     await gitExec(repoPath, `reset HEAD -- .`);
@@ -511,7 +511,7 @@ ipcMain.handle("git:unstage-all", async (_event, repoPath: string) => {
   }
 });
 
-/** 丢弃文件更改 */
+/** ä¸¢å¼æä»¶æ´æ¹ */
 ipcMain.handle(
   "git:discard",
   async (_event, repoPath: string, filePath: string) => {
@@ -524,7 +524,7 @@ ipcMain.handle(
   },
 );
 
-/** 推送到远程 */
+/** æ¨éå°è¿ç¨ */
 ipcMain.handle(
   "git:push",
   async (_event, repoPath: string, branch?: string) => {
@@ -538,7 +538,7 @@ ipcMain.handle(
   },
 );
 
-/** 从远程拉取 */
+/** ä»è¿ç¨æå */
 ipcMain.handle("git:pull", async (_event, repoPath: string) => {
   try {
     await gitExec(repoPath, `pull --ff-only`);
@@ -548,9 +548,9 @@ ipcMain.handle("git:pull", async (_event, repoPath: string) => {
   }
 });
 
-// ====== 终端 IPC ======
+// ====== ç»ç«¯ IPC ======
 
-/** 正在运行的终端进程映射 */
+/** æ­£å¨è¿è¡çç»ç«¯è¿ç¨æ å° */
 const terminalProcesses = new Map<string, {
   proc: ReturnType<typeof spawn>;
   cwd: string;
@@ -558,7 +558,7 @@ const terminalProcesses = new Map<string, {
 
 let terminalIdCounter = 0;
 
-/** 创建新终端会话 */
+/** åå»ºæ°ç»ç«¯ä¼è¯ */
 ipcMain.handle("terminal:spawn", async (_event, cwd?: string) => {
   const sessionId = `term-${++terminalIdCounter}`;
   const shellPath = process.platform === "win32" ? "cmd.exe" : "/bin/bash";
@@ -577,7 +577,7 @@ ipcMain.handle("terminal:spawn", async (_event, cwd?: string) => {
     cwd: cwd || process.cwd() || homedir,
   });
 
-  // stdout 数据 → 渲染进程
+  // stdout æ°æ® â æ¸²æè¿ç¨
   proc.stdout?.on("data", (chunk: Buffer) => {
     mainWindow?.webContents.send("terminal:stdout", {
       sessionId,
@@ -585,7 +585,7 @@ ipcMain.handle("terminal:spawn", async (_event, cwd?: string) => {
     });
   });
 
-  // stderr 数据 → 渲染进程（合并到 stdout）
+  // stderr æ°æ® â æ¸²æè¿ç¨ï¼åå¹¶å° stdoutï¼
   proc.stderr?.on("data", (chunk: Buffer) => {
     mainWindow?.webContents.send("terminal:stdout", {
       sessionId,
@@ -593,7 +593,7 @@ ipcMain.handle("terminal:spawn", async (_event, cwd?: string) => {
     });
   });
 
-  // 进程退出
+  // è¿ç¨éåº
   proc.on("exit", (code) => {
     terminalProcesses.delete(sessionId);
     mainWindow?.webContents.send("terminal:exit", {
@@ -602,7 +602,7 @@ ipcMain.handle("terminal:spawn", async (_event, cwd?: string) => {
     });
   });
 
-  // 进程错误
+  // è¿ç¨éè¯¯
   proc.on("error", (_err) => {
     terminalProcesses.delete(sessionId);
     mainWindow?.webContents.send("terminal:exit", {
@@ -614,25 +614,25 @@ ipcMain.handle("terminal:spawn", async (_event, cwd?: string) => {
   return { sessionId };
 });
 
-/** 向终端写入数据（标准输入） */
+/** åç»ç«¯åå¥æ°æ®ï¼æ åè¾å¥ï¼ */
 ipcMain.handle("terminal:stdin", async (_event, sessionId: string, data: string) => {
   const entry = terminalProcesses.get(sessionId);
   if (!entry) return;
   entry.proc.stdin?.write(data);
 });
 
-/** 调整终端尺寸 */
+/** è°æ´ç»ç«¯å°ºå¯¸ */
 ipcMain.handle("terminal:resize", async (_event, _sessionId: string, _cols: number, _rows: number) => {
-  // child_process.spawn 不支持动态 resize，此处保留接口兼容
-  // 完整 PTY resize 需要 node-pty
+  // child_process.spawn ä¸æ¯æå¨æ resizeï¼æ­¤å¤ä¿çæ¥å£å¼å®¹
+  // å®æ´ PTY resize éè¦ node-pty
 });
 
-/** 终止终端会话 */
+/** ç»æ­¢ç»ç«¯ä¼è¯ */
 ipcMain.handle("terminal:kill", async (_event, sessionId: string) => {
   const entry = terminalProcesses.get(sessionId);
   if (!entry) return;
   entry.proc.kill("SIGTERM");
-  // 2 秒后强制杀死
+  // 2 ç§åå¼ºå¶ææ­»
   setTimeout(() => {
     const stillAlive = terminalProcesses.get(sessionId);
     if (stillAlive) {
@@ -642,7 +642,7 @@ ipcMain.handle("terminal:kill", async (_event, sessionId: string) => {
   }, 2000);
 });
 
-// ====== 辅助函数 ======
+// ====== è¾å©å½æ° ======
 
 interface TreeEntry {
   name: string;
@@ -673,7 +673,7 @@ function readDirectoryTree(rootPath: string, currentPath: string, depth: number)
   }
 }
 
-// ====== 应用生命周期 ======
+// ====== åºç¨çå½å¨æ ======
 
 app.whenReady().then(() => {
   createWindow();
