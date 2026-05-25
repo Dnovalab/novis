@@ -1,7 +1,8 @@
 /**
- * CommandPalette - 命令面来（ Ctrl+Shift+P / Cmd+Shift+P )
+ * CommandPalette — 命令面板 (Ctrl+Shift+P / Cmd+Shift+P)
  *
- * 全层命令搜素告诉在执行，微似 VS 正 的发代整搜。
+ * 全局命令搜索和执行，类似 VS Code 的命令面板。
+ * 显示所有已注册命令，支持模糊搜索。
  */
 
 import { useEffect, useRef, useState, useMemo } from "react";
@@ -21,7 +22,7 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // 追加命令
+  // 过滤命令
   const filtered = useMemo(() => {
     if (!query.trim()) return commands;
     const q = query.toLowerCase();
@@ -33,7 +34,7 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
     );
   }, [query, commands]);
 
-  // �'別类型缩低（ 执布存入吇应）
+  // 按分类分组
   const grouped = useMemo(() => {
     const groups = new Map<string, Command[]>();
     for (const cmd of filtered) {
@@ -43,14 +44,14 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
     return Array.from(groups.entries());
   }, [filtered]);
 
-  // 选中累張去存
+  // 选中索引边界
   useEffect(() => {
     if (selectedIndex >= filtered.length) {
       setSelectedIndex(Math.max(0, filtered.length - 1));
     }
   }, [filtered.length, selectedIndex]);
 
-  // tbrm右派
+  // 自动聚焦
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -59,7 +60,7 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
     }
   }, [open]);
 
-  // 编向芿電檢
+  // 键盘导航
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -81,7 +82,7 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
     onClose();
   };
 
-  // 滚劸到选中项
+  // 滚动到选中项
   useEffect(() => {
     if (!listRef.current) return;
     const selected = listRef.current.querySelector("[data-selected='true']");
@@ -92,7 +93,7 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
 
   if (!open) return null;
 
-  // 全局索辩（使用 selectedIndex 客佟）
+  // 全局索引（用于 selectedIndex 定位）
   let globalIndex = -1;
 
   return (
@@ -103,7 +104,7 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
       }}
     >
       <div className="w-full max-w-lg rounded-lg border bg-popover shadow-2xl">
-        {/* 搜紬桌 */}
+        {/* 搜索框 */}
         <div className="flex items-center border-b px-3 py-2">
           <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
           <input
@@ -114,20 +115,20 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDown}
-            placeholder="輸入命令名称挮&#8242;
+            placeholder="输入命令名称…"
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
           />
           <span className="text-[10px] text-muted-foreground/40">ESC</span>
         </div>
 
-        {/* 吽令列表 */}
+        {/* 命令列表 */}
         <div
           ref={listRef}
           className="max-h-80 overflow-y-auto p-1"
         >
           {filtered.length === 0 ? (
             <div className="py-6 text-center text-xs text-muted-foreground">
-              未房匹量国的命令
+              未找到匹配的命令
             </div>
           ) : (
             grouped.map(([category, cmds]) => (
@@ -141,12 +142,12 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
                   return (
                     <button
                       key={cmd.id}
-                      data-selected={ixd === selectedIndex}
+                      data-selected={idx === selectedIndex}
                       onClick={() => executeCommand(cmd)}
                       onMouseEnter={() => setSelectedIndex(idx)}
                       className={cn(
                         "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
-                        ixd === selectedIndex
+                        idx === selectedIndex
                           ? "bg-accent text-accent-foreground"
                           : "text-popover-foreground hover:bg-accent/50",
                       )}
@@ -170,7 +171,7 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
 
         {/* 底部提示 */}
         <div className="border-t px-3 py-1.5 text-[9px] text-muted-foreground/40">
-          ↑ 导航 · Enter 题行 · ESC 关闭
+          ↑↓ 导航 · Enter 执行 · ESC 关闭
         </div>
       </div>
     </div>
