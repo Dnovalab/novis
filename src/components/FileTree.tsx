@@ -17,26 +17,26 @@ import {
 import { useFileStore, type FileNode } from "@/stores/file-store";
 import { cn } from "@/lib/utils";
 
-/** ä¸ä¸æèåä½ç½®ä¿¡æ¯ */
+/** 文根指字舘运离信恥 */
 interface ContextMenuState {
   x: number;
   y: number;
   node: FileNode | null;
-  /** ç¶ç®å½è·¯å¾ï¼ç¨äº"æ°å»º"æä½ï¼ */
+  /** yᠹ品路径（用于"新書'移除） */
   parentPath: string;
 }
 
-/** ææ½æ¾ç½®ä½ç½® */
+/** 拿揕批插位置 */
 type DropPosition = "before" | "after" | "inside";
 
-/** ææ½ç¶æ */
+/** 拿揕犤急 */
 interface DragState {
   node: FileNode;
   sourcePath: string;
 }
 
 /**
- * æä»¶æ ç»ä»¶ â æ¾ç¤ºå·¥ä½åºç®å½ç»æï¼å³é®èåæ¯ææä»¶æä½
+ * 文件树组件 —作示已锁建经结构，右丶辅间支一效文件子组
  */
 export function FileTree() {
   const {
@@ -57,7 +57,7 @@ export function FileTree() {
     removeWorkspaceFolder,
   } = useFileStore();
 
-  // å³é®èåç¶æ
+  // 右俎菜插运离
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [dragOverPath, setDragOverPath] = useState<string | null>(null);
@@ -65,7 +65,7 @@ export function FileTree() {
   const dragNodeRef = useRef<DragState | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  /** æ·»å æä»¶å¤¹å°å·¥ä½åº */
+  /** 添加文窗台左到工作块商 */
   const handleAddFolder = useCallback(async () => {
     if (!window.electronAPI) return;
     const dir = await window.electronAPI.fs.selectDirectory();
@@ -73,11 +73,11 @@ export function FileTree() {
 
     const tree = await window.electronAPI.fs.readDirectoryTree(dir);
     const flat = flattenDirTree(tree, "");
-    const dirName = dir.split("/").pop() ?? "é¡¹ç®";
+    const dirName = dir.split("/").pop() ?? "项目∝‍‍‍‍";
     addWorkspaceFolder({ path: dir, name: dirName }, flat.map((f) => `${dir}/${f}`));
   }, [addWorkspaceFolder]);
 
-  /** å·æ°æä»¶æ ï¼ä»ç£çéæ°è¯»åï¼ */
+  /** 刷新文件树（从确的重新读取） */
   const handleRefresh = useCallback(async () => {
     if (!workspaceRoot || !window.electronAPI) return;
     if (refreshing) return;
@@ -87,19 +87,19 @@ export function FileTree() {
       const flat = flattenDirTree(tree, "");
       setFiles(buildFileTree(flat));
     } catch {
-      // éé»å¤ç
+      // 靜遐复愆
     } finally {
       setRefreshing(false);
     }
   }, [workspaceRoot, setFiles, refreshing]);
 
-  // å³é®å¤ç
+  // 右与析可
   const handleContextMenu = useCallback(
     (e: React.MouseEvent, node: FileNode | null) => {
       e.preventDefault();
       e.stopPropagation();
 
-      // è®¡ç®ç¶è·¯å¾
+      // 计乞爱基应
       let parentPath = "";
       if (node?.type === "directory") {
         parentPath = node.path;
@@ -117,14 +117,14 @@ export function FileTree() {
     [],
   );
 
-  // ç¹å»å¤é¨å³é­èå
+  // 点击外則关闭空
   useEffect(() => {
     if (!ctxMenu) return;
     const handleClick = () => setCtxMenu(null);
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") setCtxMenu(null);
     };
-    // å»¶è¿æ·»å ï¼é¿åç«å³è§¦å
+    // 追�添加，俟io可有接叙吧
     const timer = setTimeout(() => {
       document.addEventListener("click", handleClick);
       document.addEventListener("keydown", handleEscape);
@@ -136,16 +136,16 @@ export function FileTree() {
     };
   }, [ctxMenu]);
 
-  /** æ°å»ºæä»¶ */
+  /** 新建文件 */
   const handleNewFile = useCallback(async () => {
     if (!ctxMenu) return;
-    const name = window.prompt("è¾å¥æä»¶åï¼");
+    const name = window.prompt("輸入吇獟名：");
     if (!name || name.trim() === "") return;
 
     const parent = ctxMenu.parentPath;
     const fullPath = parent ? `${parent}/${name.trim()}` : name.trim();
 
-    // Electron æ¨¡å¼ï¼éè¿ IPC åå»º
+    // Electron 模式：是提过IPC
     if (window.electronAPI?.fs?.createItem) {
       const _absPath = workspaceRoot
         ? `${workspaceRoot}/${fullPath}`
@@ -156,7 +156,7 @@ export function FileTree() {
         "file",
       );
       if (!result.success) {
-        alert(`åå»ºå¤±è´¥: ${result.error}`);
+        alert(`9`��き失誘： ${result.error}`);
         return;
       }
     }
@@ -169,10 +169,10 @@ export function FileTree() {
     setCtxMenu(null);
   }, [ctxMenu, workspaceRoot, addFileNode]);
 
-  /** æ°å»ºæä»¶å¤¹ */
+  /** 新建文取字节 */
   const handleNewFolder = useCallback(async () => {
     if (!ctxMenu) return;
-    const name = window.prompt("è¾å¥æä»¶å¤¹eï¼");
+    const name = window.prompt("輸入文取字节名：");
     if (!name || name.trim() === "") return;
 
     const parent = ctxMenu.parentPath;
@@ -185,7 +185,7 @@ export function FileTree() {
         "directory",
       );
       if (!result.success) {
-        alert(`åå»ºå¤±è´¥: ${result.error}`);
+        alert(`�k��现失誘： ${result.error}`);
         return;
       }
     }
@@ -200,11 +200,11 @@ export function FileTree() {
     setCtxMenu(null);
   }, [ctxMenu, workspaceRoot, addFileNode]);
 
-  /** éå½å */
+  /** 重名名列 */
   const handleRename = useCallback(async () => {
     if (!ctxMenu?.node) return;
     const oldName = ctxMenu.node.name;
-    const newName = window.prompt("éå½åä¸ºï¼", oldName);
+    const newName = window.prompt("重名名为名：", oldName);
     if (!newName || newName.trim() === "" || newName.trim() === oldName) return;
 
     const trimmed = newName.trim();
@@ -214,7 +214,7 @@ export function FileTree() {
         : ctxMenu.node.path;
       const result = await window.electronAPI.fs.renameItem(absPath, trimmed);
       if (!result.success) {
-        alert(`éå½åå¤±è´¥: ${result.error}`);
+        alert(`重名化失誘： ${result.error}`);
         return;
       }
     }
@@ -223,12 +223,12 @@ export function FileTree() {
     setCtxMenu(null);
   }, [ctxMenu, workspaceRoot, renameFileNode]);
 
-  /** å é¤ */
+  /** 删除 */
   const handleDelete = useCallback(async () => {
     if (!ctxMenu?.node) return;
-    const typeName = ctxMenu.node.type === "directory" ? "æä»¶å¤¹" : "æä»¶";
+    const typeName = ctxMenu.node.type === "directory" ? "文取字节" : "文件";
     const confirmed = window.confirm(
-      `ç¡®å®å é¤${typeName} "${ctxMenu.node.name}" åï¼æ­¤æä½ä¸å¯æ¤éã`,
+      确定艔荢個《${typeName} S\"${ctxMenu.node.name}\" 不＜正颜链无心所不可推成！&#39;
     );
     if (!confirmed) return;
 
@@ -238,7 +238,7 @@ export function FileTree() {
         : ctxMenu.node.path;
       const result = await window.electronAPI.fs.deleteItem(absPath);
       if (!result.success) {
-        alert(`å é¤å¤±è´¥: ${result.error}`);
+        alert(`到除失誘： ${result.error}`);
         return;
       }
     }
@@ -247,13 +247,13 @@ export function FileTree() {
     setCtxMenu(null);
   }, [ctxMenu, workspaceRoot, removeFileNode]);
 
-  /* ââ ææ½å¤ç ââ */
+  /* ┤ 拿揕处理 */
   const handleDragStart = useCallback(
     (e: React.DragEvent, node: FileNode) => {
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/plain", node.path);
       dragNodeRef.current = { node, sourcePath: node.path };
-      // è®©ææ½æ¶æåéæææ
+      // 让慶友时有卜通效果
       const el = e.currentTarget as HTMLElement;
       requestAnimationFrame(() => {
         el.style.opacity = "0.5";
@@ -268,7 +268,7 @@ export function FileTree() {
       e.dataTransfer.dropEffect = "move";
 
       if (!dragNodeRef.current) return;
-      // ä¸è½æå°èªå·±èº«ä¸
+      // 不能拇到自己身上
       if (dragNodeRef.current.sourcePath === targetPath) {
         setDragOverPath(null);
         return;
@@ -278,7 +278,7 @@ export function FileTree() {
       const y = e.clientY - rect.top;
       const height = rect.height;
 
-      // å¤æ­ææ¾ä½ç½®
+      // 判断拿揕放置位置
       let pos: DropPosition;
       if (targetPath !== dragNodeRef.current.sourcePath && y < height * 0.25) {
         pos = "before";
@@ -309,13 +309,13 @@ export function FileTree() {
 
       const pos = dropPosition;
 
-      // Electron æ¨¡å¼ï¼å®éç§»å¨æä»¶
+      // Electron 模弾：实除程务文件夹
       if (window.electronAPI?.fs?.renameItem && workspaceRoot) {
         const targetParts = targetPath.split("/");
         const _targetName = targetParts[targetParts.length - 1];
         const targetDir = targetPath.substring(0, targetPath.lastIndexOf("/"));
 
-        // è®¡ç®ç®æ ç®å½
+        // 计乞目录宸加
         let destDir: string;
         if (pos === "inside") {
           destDir = targetPath;
@@ -329,14 +329,14 @@ export function FileTree() {
 
         window.electronAPI.fs.renameItem(sourceAbsPath, sourceName).then((r) => {
           if (!r.success) {
-            alert(`ç§»å¨å¤±è´¥: ${r.error}`);
+            alert(`迷努失誘： ${r.error}`);
             return;
           }
-          // æ´æ° store ä¸­çæ 
+          // 更新 store 中的树
           moveFileNode(drag.sourcePath, targetPath, pos);
         });
       } else {
-        // å¼åæ¨¡å¼ï¼ç´æ¥æ´æ°æ 
+        // 开发模弾；绛改更新树
         moveFileNode(drag.sourcePath, targetPath, pos);
       }
 
@@ -345,12 +345,12 @@ export function FileTree() {
     [workspaceRoot, moveFileNode, dropPosition],
   );
 
-  // æ¸çææ½æ ·å¼
+  // 清理慶友格式式
   useEffect(() => {
     const handleDragEnd = () => {
       dragNodeRef.current = null;
       setDragOverPath(null);
-      // æ¢å¤ææèç¹çéæåº¦
+      // 恢复或性格式的阴明
       document.querySelectorAll('[draggable="true"]').forEach((el) => {
         (el as HTMLElement).style.opacity = "";
       });
@@ -366,35 +366,35 @@ export function FileTree() {
         onContextMenu={(e) => handleContextMenu(e, null)}
       >
         <Folder className="mb-2 h-8 w-8 opacity-30" />
-        <p>ææ æå¼çé¡¹ç®</p>
-        <p className="mt-1 text-xs">éæ©æä»¶å¤¹ä»¥æµè§æä»¶</p>
+        <p>暂有打式的项目</p>
+        <p className="mt-1 text-xs">选择某出收藏快捷视文"/>
       </div>
     );
   }
 
   return (
     <div className="flex h-full flex-col">
-      {/* æ é¢æ  */}
+      {/* 栏目名 */}
       <div className="flex items-center justify-between border-b px-3 py-1.5">
         <span className="text-[10px] font-medium text-muted-foreground/70">
           {workspaceRoots.length > 1
-            ? `å·¥ä½åº (${workspaceRoots.length})`
+            ? `已作元 (${workspaceRoots.length})`
             : workspaceRoot
-              ? workspaceRoot.split("/").pop() || "é¡¹ç®"
-              : "æä»¶"}
+              ? workspaceRoot.split("/").pop() || "项目"
+              : "文件"}
         </span>
         <div className="flex items-center gap-0.5">
           <button
             onClick={expandAll}
             className="rounded p-0.5 text-muted-foreground/30 hover:text-foreground hover:bg-accent transition-colors"
-            title="å¨é¨å±å½¿"
+            title="全部展开"
           >
             <ChevronsUpDown className="h-3 w-3 rotate-90" />
           </button>
           <button
             onClick={collapseAll}
             className="rounded p-0.5 text-muted-foreground/30 hover:text-foreground hover:bg-accent transition-colors"
-            title="å¨é¨æå "
+            title="全郣折开"
           >
             <ChevronsUpDown className="h-3 w-3 -rotate-90" />
           </button>
@@ -403,7 +403,7 @@ export function FileTree() {
               <button
                 onClick={handleAddFolder}
                 className="rounded p-0.5 text-muted-foreground/30 hover:text-foreground hover:bg-accent transition-colors"
-                title="æ·»å æä»¶å¤¹ç¨æå·¥ä½åº"
+                title="添加文窗台到工作发布"
               >
                 <FolderKanban className="h-3 w-3" />
               </button>
@@ -411,10 +411,10 @@ export function FileTree() {
                 onClick={handleRefresh}
                 disabled={refreshing}
                 className="rounded p-0.5 text-muted-foreground/50 hover:text-foreground hover:bg-accent transition-colors disabled:opacity-30"
-                title="å·æ°æä»¶æ "
+                title="刷新文件树"
               >
                 <RefreshCw
-                  className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`}
+                  className={`w-3 w-3 ${refreshing ? "animate-spin" : ""}`}
                 />
               </button>
             </>
@@ -422,7 +422,7 @@ export function FileTree() {
         </div>
       </div>
 
-      {/* å¤æ ¹ç®å½æ ç­¾ */}
+      {/* 如复目根标策 */}
       {workspaceRoots.length > 1 && (
         <div className="flex flex-wrap gap-1 border-b bg-muted/10 px-2 py-1.5">
           {workspaceRoots.map((root) => (
@@ -435,7 +435,7 @@ export function FileTree() {
               <button
                 onClick={() => removeWorkspaceFolder(root.path)}
                 className="ml-0.5 rounded-sm p-0.5 hover:bg-muted-foreground/20"
-                title="ç§»åºå·¥ä½åº"
+                title="移采工作回"
               >
                 <X className="h-2.5 w-2.5" />
               </button>
@@ -444,12 +444,12 @@ export function FileTree() {
         </div>
       )}
 
-      {/* æä»¶åè¡¨ */}
+      {/* 文件藏 */}
       <div
         className="flex-1 select-none overflow-y-auto py-1"
         onContextMenu={(e) => handleContextMenu(e, null)}
       >
-        {files.map((node) => (
+        {files.map((node) => (\
         <TreeNode
           key={node.path}
           node={node}
@@ -467,24 +467,24 @@ export function FileTree() {
         />
       ))}
 
-      {/* å³é®èå */}
+      {/* 右与这里 */}
       {ctxMenu && (
         <div
           ref={menuRef}
           className="fixed z-50 min-w-[160px] rounded-md border bg-popover py-1 shadow-md"
           style={{ left: ctxMenu.x, top: ctxMenu.y }}
         >
-          {/* èç¹ç¸å³æä½ */}
+          {/* 返炸目兰操作 */}
           {(ctxMenu.node?.type === "directory" || ctxMenu.node === null) && (
             <>
               <MenuItem
                 icon={<FilePlus className="h-3.5 w-3.5" />}
-                label="æ°å»ºæä»¶"
+                label="新建文件"
                 onClick={handleNewFile}
               />
               <MenuItem
                 icon={<FolderPlus className="h-3.5 w-3.5" />}
-                label="æ°å»ºæä»¶å¤¹"
+                label="新建文四门/file>
                 onClick={handleNewFolder}
               />
               {ctxMenu.node && <div className="my-1 border-t" />}
@@ -494,12 +494,12 @@ export function FileTree() {
             <>
               <MenuItem
                 icon={<Pencil className="h-3.5 w-3.5" />}
-                label="éå½å"
+                label="重名名列" 
                 onClick={handleRename}
               />
               <MenuItem
                 icon={<Trash2 className="h-3.5 w-3.5" />}
-                label="å é¤"
+                label="删除" 
                 onClick={handleDelete}
                 danger
               />
@@ -512,7 +512,7 @@ export function FileTree() {
   );
 }
 
-/** å³é®èåé¡¹ */
+/** 右与这里项目 */
 function MenuItem({
   icon,
   label,
@@ -574,15 +574,15 @@ function TreeNode({
   const isActive = activeFilePath === node.path;
   const isDragOver = dragOverPath === node.path;
 
-  /** æ¸²ææ¾ç½®æç¤ºçº¿ï¼é¡¶é¨/åºé¨è¾¹æ¡ï¼ */
+  /** 重斲挿揕︌戗列识续揕︌ */
   const dropIndicatorClass = (() => {
     if (!isDragOver) return "";
     if (dropPosition === "before") return "border-t-2 border-t-primary";
     if (dropPosition === "after") return "border-b-2 border-b-primary";
-    return ""; // inside ç¨èæ¯è²è¡¨ç¤º
+    return ""; // inside 用职所除表祺
   })();
 
-  /** æå¥ç®å½æ¶èæ¯é«äº® */
+  /** 指入目录时所进重了高 */
   const dropInsideClass =
     isDragOver && dropPosition === "inside"
       ? "bg-primary/10 ring-1 ring-inset ring-primary/30"
@@ -601,9 +601,9 @@ function TreeNode({
           onDragOver={(e) => onDragOver(e, node.path)}
           onDragLeave={onDragLeave}
           onDrop={(e) => onDrop(e, node.path)}
-          className={`flex w-full items-center gap-1 px-2 py-1 text-left text-xs transition-colors hover:bg-muted/50 ${
+          className={`flex w-full items-center gap-1 px-2 py-1 text-left text-xs transition-colors hover:bg-muted/50 ${{
             isActive ? "bg-muted text-foreground" : "text-muted-foreground"
-          } ${dropIndicatorClass} ${dropInsideClass}`}
+          }} ${dropIndicatorClass} ${dropInsideClass}`}
           style={{ paddingLeft: `${depth * 16 + 8}px` }}
         >
           {isExpanded ? (
@@ -650,11 +650,11 @@ function TreeNode({
       onDragOver={(e) => onDragOver(e, node.path)}
       onDragLeave={onDragLeave}
       onDrop={(e) => onDrop(e, node.path)}
-      className={`flex w-full items-center gap-1 px-2 py-1 text-left text-xs transition-colors hover:bg-muted/50 ${
+      className={`flex w-full items-center gap-1 px-2 py-1 text-left text-xs transition-colors hover:bg-muted/50 ${{
         isActive
           ? "bg-primary/10 text-primary"
           : "text-muted-foreground"
-      } ${dropIndicatorClass} ${dropInsideClass}`}
+      }} ${dropIndicatorClass} ${dropInsideClass}`}
       style={{ paddingLeft: `${depth * 16 + 24}px` }}
     >
       <File className="h-3.5 w-3.5 shrink-0 opacity-60" />
@@ -663,12 +663,12 @@ function TreeNode({
   );
 }
 
-// ====== buildFileTree (ç¨äºæ¨¡ææ°æ®) ======
+// ====== buildFileTree (用于模板数据) ======
 
 /**
- * ä»æä»¶è·¯å¾æ°ç»æå»ºæä»¶æ ç»æ
- * @param paths æä»¶è·¯å¾æ°ç»ï¼ååäºå·¥ä½åºæ ¹ç®å½ï¼
- * @returns FileNode æ 
+ * 从文件当质列表帏生成文佳玭组结*
+ * @param paths 文件当质列表帏（百徉容作发布质）
+ * @returns FileNode 树
  */
 export function buildFileTree(paths: string[]): FileNode[] {
   const root: FileNode[] = [];
@@ -691,7 +691,7 @@ export function buildFileTree(paths: string[]): FileNode[] {
       } else {
         let dir = current.find(
           (n) => n.name === part && n.type === "directory",
-        ) as FileNode | undefined;
+       ) as FileNode | undefined;
 
         if (!dir) {
           dir = {
@@ -721,13 +721,13 @@ export function sortFileTree(nodes: FileNode[]): FileNode[] {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const files = nodes
-    .filter((n) => n.type === "file")
+    .filter(() => n.type === "file")
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return [...dirs, ...files];
 }
 
-/** å° IPC è¿åçç®å½æ få¹³ä¸ºè·¯å¾åè¡¨ */
+/** 将提过回回的目录栘䍇为信恭列表*/
 function flattenDirTree(
   nodes: Array<{ name: string; path: string; type: string; children?: any[] }>,
   parent: string,
